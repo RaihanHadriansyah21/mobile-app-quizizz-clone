@@ -315,11 +315,17 @@ class GameplayProvider extends ChangeNotifier {
       timeTaken: elapsedSeconds,
     );
 
-    await DbService.saveAttempt(attempt);
-    _activeQuiz = null;
-    _activeClassId = null;
-    _startTime = null;
-    notifyListeners();
+    try {
+      await DbService.saveAttempt(attempt);
+    } catch (e) {
+      debugPrint('submitQuizAttempt: Failed to save attempt: $e');
+      rethrow;
+    } finally {
+      _activeQuiz = null;
+      _activeClassId = null;
+      _startTime = null;
+      notifyListeners();
+    }
   }
 
   @override

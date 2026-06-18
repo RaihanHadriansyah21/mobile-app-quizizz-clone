@@ -24,12 +24,24 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
     final studentId = auth.currentUser!.id;
     final studentName = auth.currentUser!.name;
 
-    await gameplay.submitQuizAttempt(studentId, studentName);
-    
-    if (mounted) {
-      await Provider.of<MahasiswaProvider>(context, listen: false).refreshData(studentId, syncWithSupabase: false);
-      
+    try {
+      await gameplay.submitQuizAttempt(studentId, studentName);
       if (mounted) {
+        await Provider.of<MahasiswaProvider>(context, listen: false).refreshData(studentId, syncWithSupabase: false);
+      }
+    } catch (e) {
+      debugPrint('Error submitting quiz attempt: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan hasil: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const MahasiswaMainNavigation()),

@@ -8,7 +8,7 @@ class MockData {
   // Pre-configured Users
   static List<UserModel> get initialUsers => [
     UserModel(
-      id: 'u_admin',
+      id: 'ac0dc55c-988b-4ef5-8383-1894288e2068',
       name: 'Administrator Utama',
       email: 'admin@quizizz.com',
       role: UserRole.admin,
@@ -16,7 +16,7 @@ class MockData {
       nim: '1111111',
     ),
     UserModel(
-      id: 'u_dosen',
+      id: '21b5fbed-455a-494f-8120-033163fec1a4',
       name: 'Mayang, S.Pd.',
       email: 'dosen@quizizz.com',
       role: UserRole.dosen,
@@ -26,7 +26,7 @@ class MockData {
       nim: '1985032',
     ),
     UserModel(
-      id: 'u_mahasiswa',
+      id: 'bf0fb3b0-0fea-4f45-9378-82c00bd599c0',
       name: 'Budi Santoso',
       email: 'mahasiswa@quizizz.com',
       role: UserRole.mahasiswa,
@@ -52,7 +52,7 @@ class MockData {
       title: 'Kuis IPA: Sistem Tata Surya 🪐',
       description:
           'Uji pemahaman Anda mengenai planet-planet di galaksi Bima Sakti secara mandiri.',
-      creatorId: 'u_dosen',
+      creatorId: '21b5fbed-455a-494f-8120-033163fec1a4',
       isHomework: false,
       isTimerEnabled: true,
       questions: [
@@ -98,7 +98,7 @@ class MockData {
       title: 'Tugas Matematika: Aljabar Dasar 📐',
       description:
           'Pekerjaan Rumah (Homework) Aljabar Dasar. Kerjakan dengan teliti tanpa batasan waktu.',
-      creatorId: 'u_dosen',
+      creatorId: '21b5fbed-455a-494f-8120-033163fec1a4',
       isHomework: true,
       deadline: DateTime.now().add(const Duration(days: 7)),
       isTimerEnabled: false,
@@ -136,7 +136,7 @@ class MockData {
       title: 'English Listening & Meme Trivia 🎧',
       description:
           'Practice English with audio clips and funny reaction memes!',
-      creatorId: 'u_dosen',
+      creatorId: '21b5fbed-455a-494f-8120-033163fec1a4',
       isHomework: false,
       isTimerEnabled: true,
       questions: [
@@ -170,16 +170,16 @@ class MockData {
       id: 'c_class10a',
       className: 'Kelas X-A (IPA)',
       code: '102948',
-      teacherId: 'u_dosen',
-      studentIds: ['u_mahasiswa', 'u_mahasiswa2'],
+      teacherId: '21b5fbed-455a-494f-8120-033163fec1a4',
+      studentIds: ['bf0fb3b0-0fea-4f45-9378-82c00bd599c0', 'u_mahasiswa2'],
       quizIds: ['q_tatasurya', 'q_english'],
     ),
     ClassModel(
       id: 'c_class10b',
       className: 'Kelas X-B (IPS)',
       code: '459203',
-      teacherId: 'u_dosen',
-      studentIds: ['u_mahasiswa'],
+      teacherId: '21b5fbed-455a-494f-8120-033163fec1a4',
+      studentIds: ['bf0fb3b0-0fea-4f45-9378-82c00bd599c0'],
       quizIds: ['q_math'],
     ),
   ];
@@ -188,7 +188,7 @@ class MockData {
   static List<AttemptModel> get initialAttempts => [
     AttemptModel(
       id: 'a_att1',
-      studentId: 'u_mahasiswa',
+      studentId: 'bf0fb3b0-0fea-4f45-9378-82c00bd599c0',
       studentName: 'Budi Santoso',
       quizId: 'q_tatasurya',
       score: 350,
@@ -220,7 +220,7 @@ class MockData {
     ),
     AttemptModel(
       id: 'a_att3',
-      studentId: 'u_mahasiswa',
+      studentId: 'bf0fb3b0-0fea-4f45-9378-82c00bd599c0',
       studentName: 'Budi Santoso',
       quizId: 'q_english',
       score: 100,
