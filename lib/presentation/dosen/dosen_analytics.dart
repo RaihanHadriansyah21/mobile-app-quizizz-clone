@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/models/class_model.dart';
 import '../../data/models/quiz_model.dart';
 import '../../data/models/attempt_model.dart';
 import '../../data/providers/dosen_provider.dart';
 import '../../data/services/file_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/loading_skeleton.dart';
 import 'classroom_sync.dart';
 
 class DosenAnalyticsScreen extends StatefulWidget {
@@ -18,6 +21,81 @@ class DosenAnalyticsScreen extends StatefulWidget {
 class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
   ClassModel? _selectedClass;
   QuizModel? _selectedQuiz;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
+        boxShadow: AppTheme.premiumShadow,
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (val) {
+          setState(() {
+            _searchQuery = val.trim();
+          });
+        },
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search, color: AppTheme.primary, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          hintText: 'Cari nama mahasiswa...',
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LoadingSkeleton(width: double.infinity, height: 48, borderRadius: 12),
+        const SizedBox(height: 16),
+        LoadingSkeleton(width: double.infinity, height: 48, borderRadius: 12),
+        const SizedBox(height: 28),
+        Row(
+          children: [
+            Expanded(child: LoadingSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+            const SizedBox(width: 16),
+            Expanded(child: LoadingSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: LoadingSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+            const SizedBox(width: 16),
+            Expanded(child: LoadingSkeleton(width: double.infinity, height: 90, borderRadius: 16)),
+          ],
+        ),
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -112,6 +190,13 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
       return a.timeTaken.compareTo(b.timeTaken); // time taken ASC
     });
 
+    final filteredRankedStudents = rankedStudents
+        .where((a) => a.studentName.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+    final filteredAttempts = attempts
+        .where((a) => a.studentName.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
     Map<String, int> questionCorrectCount = {};
     if (attempts.isNotEmpty && _selectedQuiz != null) {
       int totalCorrect = attempts
@@ -181,15 +266,22 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: RefreshIndicator(
+        onRefresh: () => provider.refreshData(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24.0),
+          child: provider.isLoading
+              ? _buildSkeletonBody()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
             DropdownButtonFormField<ClassModel>(
               initialValue: classes.contains(_selectedClass)
                   ? _selectedClass
                   : null,
+              dropdownColor: AppTheme.getSurface(context),
+              iconEnabledColor: AppTheme.secondary,
               decoration: const InputDecoration(labelText: 'Pilih Kelas'),
               items: classes.map((c) {
                 return DropdownMenuItem<ClassModel>(
@@ -211,6 +303,8 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                 initialValue: assignedQuizzes.contains(_selectedQuiz)
                     ? _selectedQuiz
                     : null,
+                dropdownColor: AppTheme.getSurface(context),
+                iconEnabledColor: AppTheme.primary,
                 decoration: const InputDecoration(labelText: 'Pilih Kuis'),
                 items: assignedQuizzes.map((q) {
                   return DropdownMenuItem<QuizModel>(
@@ -224,7 +318,11 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                   });
                 },
               ),
-            const SizedBox(height: 28),
+            if (_selectedQuiz != null) ...[
+              const SizedBox(height: 16),
+              _buildSearchBar(),
+            ],
+            const SizedBox(height: 20),
 
             if (_selectedClass == null)
               Center(
@@ -263,94 +361,165 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                       'Akurasi Kelas',
                       '${classAccuracy.round()}%',
                       Icons.insights,
-                      AppTheme.accent,
+                      AppTheme.primary,
                     ),
                   ),
                 ],
-              ),
+              ).animate().fade(duration: 300.ms).slideY(begin: 0.1, end: 0),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: _buildMetricCard(
-                      'Peserta & Attempt',
-                      '$jumlahPeserta / $totalMahasiswa Siswa ($jumlahAttempt Attempt, $perfectScores Sempurna)',
-                      Icons.people_alt_outlined,
-                      AppTheme.warning,
+                      'Nilai Tertinggi',
+                      '$highestScore XP',
+                      Icons.emoji_events_outlined,
+                      AppTheme.success,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildMetricCard(
-                      'Nilai Tertinggi / Terendah',
-                      '$highestScore / $lowestScore',
-                      Icons.height,
-                      AppTheme.success,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Soal Tersulit',
-                      hardestQuestionText == "N/A"
-                          ? "N/A"
-                          : hardestQuestionText.length > 18
-                          ? '${hardestQuestionText.substring(0, 15)}... (${hardestQuestionAccuracy.round()}% Benar)'
-                          : '$hardestQuestionText (${hardestQuestionAccuracy.round()}% Benar)',
-                      Icons.warning_amber_outlined,
+                      'Nilai Terendah',
+                      '$lowestScore XP',
+                      Icons.trending_down,
                       AppTheme.error,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
+              ).animate().fade(delay: 50.ms, duration: 300.ms).slideY(begin: 0.1, end: 0),
+              const SizedBox(height: 16),
+              _buildParticipationCard(jumlahPeserta, totalMahasiswa, jumlahAttempt, perfectScores)
+                  .animate().fade(delay: 100.ms, duration: 300.ms).slideY(begin: 0.1, end: 0),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  boxShadow: AppTheme.premiumShadow,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.error.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.warning_amber_outlined, color: AppTheme.error, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Soal Tersulit',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              hardestQuestionText == "N/A"
+                                  ? "N/A"
+                                  : hardestQuestionText.length > 25
+                                  ? '${hardestQuestionText.substring(0, 22)}... (${hardestQuestionAccuracy.round()}% Benar)'
+                                  : '$hardestQuestionText (${hardestQuestionAccuracy.round()}% Benar)',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.getTextPrimary(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ).animate().fade(delay: 150.ms, duration: 300.ms).slideY(begin: 0.1, end: 0),
+              const SizedBox(height: 28),
 
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.picture_as_pdf),
-                      label: const Text('Export PDF'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.success,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: AppTheme.successGradient,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.success.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      onPressed: () async {
-                        await FileService.exportAnalyticsPdf(
-                          classObj: _selectedClass!,
-                          quiz: _selectedQuiz!,
-                          attempts: attempts,
-                        );
-                      },
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+                        label: const Text('Export PDF', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await FileService.exportAnalyticsPdf(
+                            classObj: _selectedClass!,
+                            quiz: _selectedQuiz!,
+                            attempts: attempts,
+                          );
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.grid_on),
-                      label: const Text('Export CSV'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: AppTheme.accentGradient,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.secondary.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      onPressed: () async {
-                        await FileService.exportAnalyticsCsv(
-                          classObj: _selectedClass!,
-                          quiz: _selectedQuiz!,
-                          attempts: attempts,
-                        );
-                      },
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.grid_on, color: Colors.white),
+                        label: const Text('Export CSV', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await FileService.exportAnalyticsCsv(
+                            classObj: _selectedClass!,
+                            quiz: _selectedQuiz!,
+                            attempts: attempts,
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
-              ),
+              ).animate().fade(delay: 200.ms, duration: 300.ms),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                icon: const Icon(Icons.cloud_sync, color: Colors.white),
+                icon: Icon(Icons.cloud_sync, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppTheme.primary),
                 label: const Text('Sync Classroom'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -365,18 +534,18 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                     ),
                   );
                 },
-              ),
+              ).animate().fade(delay: 250.ms, duration: 300.ms),
               const SizedBox(height: 32),
 
-              const SizedBox(height: 24),
-              Card(
-                color: AppTheme.getSurface(context),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppTheme.getBorderColor(context)),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  boxShadow: AppTheme.premiumShadow,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -384,104 +553,120 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                         'Distribusi Nilai',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      const SizedBox(height: 12),
-                      _buildDistributionRow('80 - 100 (Sangat Baik)', rangeA, attempts.length),
-                      _buildDistributionRow('60 - 79 (Baik)', rangeB, attempts.length),
-                      _buildDistributionRow('40 - 59 (Cukup)', rangeC, attempts.length),
-                      _buildDistributionRow('0 - 39 (Kurang)', rangeD, attempts.length),
+                      const SizedBox(height: 16),
+                      _buildDistributionRow('80 - 100 (Sangat Baik)', rangeA, attempts.length, AppTheme.success),
+                      _buildDistributionRow('60 - 79 (Baik)', rangeB, attempts.length, AppTheme.primary),
+                      _buildDistributionRow('40 - 59 (Cukup)', rangeC, attempts.length, AppTheme.warning),
+                      _buildDistributionRow('0 - 39 (Kurang)', rangeD, attempts.length, AppTheme.error),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+              ).animate().fade(delay: 300.ms, duration: 400.ms),
+              const SizedBox(height: 32),
+              
               Text(
                 'Peringkat Mahasiswa (Nilai Terbaik)',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              rankedStudents.isEmpty
-                  ? Card(
-                      color: AppTheme.getSurface(context),
-                      child: const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('Belum ada data peringkat.'),
-                      ),
+              filteredRankedStudents.isEmpty
+                  ? EmptyState(
+                      title: _searchQuery.isEmpty ? 'Belum Ada Peringkat' : 'Hasil Tidak Ditemukan',
+                      description: _searchQuery.isEmpty
+                          ? 'Belum ada data peringkat untuk kuis ini.'
+                          : 'Tidak ada mahasiswa dengan nama "$_searchQuery".',
+                      icon: Icons.emoji_events_outlined,
+                      illustrationType: EmptyIllustrationType.noAnalytics,
                     )
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: rankedStudents.length,
+                      itemCount: filteredRankedStudents.length,
                       itemBuilder: (context, index) {
-                        final attempt = rankedStudents[index];
-                        return Card(
-                          color: AppTheme.getSurface(context),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: AppTheme.getBorderColor(context)),
+                        final attempt = filteredRankedStudents[index];
+                        final rank = index + 1;
+                        Color medalColor = Colors.grey;
+                        if (rank == 1) medalColor = AppTheme.warning;
+                        else if (rank == 2) medalColor = const Color(0xFFBDC3C7);
+                        else if (rank == 3) medalColor = const Color(0xFFCD7F32);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.getSurface(context),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppTheme.getBorderColor(context)),
+                            boxShadow: AppTheme.premiumShadow,
                           ),
                           child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: index == 0
-                                  ? AppTheme.warning.withOpacity(0.2)
-                                  : AppTheme.getSurfaceLight(context),
+                            leading: Container(
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: rank <= 3 ? medalColor.withOpacity(0.15) : AppTheme.getSurfaceLight(context),
+                                shape: BoxShape.circle,
+                                border: rank <= 3 ? Border.all(color: medalColor, width: 1.5) : null,
+                              ),
                               child: Text(
-                                '${index + 1}',
+                                '$rank',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: index == 0 ? AppTheme.warning : null,
+                                  color: rank <= 3 ? medalColor : AppTheme.getTextPrimary(context),
                                 ),
                               ),
                             ),
                             title: Text(attempt.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('Durasi: ${attempt.timeTaken} detik • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}'),
+                            subtitle: Text('Durasi: ${attempt.timeTaken}s • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}', style: const TextStyle(fontSize: 12)),
                             trailing: Text(
                               '${attempt.score} XP',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.accent),
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.accent, fontSize: 15),
                             ),
                           ),
-                        );
+                        ).animate().fade(delay: (index * 50).ms, duration: 300.ms).slideY(begin: 0.08, end: 0);
                       },
                     ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+              
               Text(
                 'Analisis Akurasi per Soal',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              Card(
-                color: AppTheme.getSurface(context),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppTheme.getBorderColor(context)),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  boxShadow: AppTheme.premiumShadow,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     children: _selectedQuiz!.questions.map((q) {
                       final correctCount = questionCorrectCount[q.id] ?? 0;
                       final totalAttempts = attempts.length;
                       final double pct = totalAttempts > 0 ? (correctCount / totalAttempts) * 100 : 0.0;
+                      final int questionNumber = _selectedQuiz!.questions.indexOf(q) + 1;
+                      
+                      Color statColor = AppTheme.error;
+                      if (pct >= 85) statColor = AppTheme.success;
+                      else if (pct >= 50) statColor = AppTheme.warning;
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CircleAvatar(
-                              radius: 14,
-                              backgroundColor: pct >= 80
-                                  ? AppTheme.success.withOpacity(0.2)
-                                  : (pct >= 50
-                                      ? AppTheme.warning.withOpacity(0.2)
-                                      : AppTheme.error.withOpacity(0.2)),
+                              radius: 15,
+                              backgroundColor: statColor.withOpacity(0.15),
                               child: Text(
-                                '${_selectedQuiz!.questions.indexOf(q) + 1}',
+                                '$questionNumber',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: pct >= 80
-                                      ? AppTheme.success
-                                      : (pct >= 50 ? AppTheme.warning : AppTheme.error),
+                                  color: statColor,
                                 ),
                               ),
                             ),
@@ -490,15 +675,13 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(q.text, style: const TextStyle(fontSize: 13)),
+                                  Text(q.text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                                   const SizedBox(height: 4),
                                   Text(
                                     'Akurasi: ${pct.round()}% ($correctCount / $totalAttempts Siswa)',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: pct >= 80
-                                          ? AppTheme.success
-                                          : (pct >= 50 ? AppTheme.warning : AppTheme.error),
+                                      color: statColor,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -511,8 +694,9 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                     }).toList(),
                   ),
                 ),
-              ),
+              ).animate().fade(delay: 350.ms, duration: 400.ms),
               const SizedBox(height: 32),
+              
               Text(
                 'Detail Jawaban Mahasiswa',
                 style: Theme.of(
@@ -520,149 +704,131 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              attempts.isEmpty
-                  ? Card(
-                      color: AppTheme.getSurface(context),
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Text(
-                          'Belum ada mahasiswa yang menyelesaikan kuis ini.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppTheme.getTextSecondary(context),
-                          ),
-                        ),
-                      ),
+              filteredAttempts.isEmpty
+                  ? EmptyState(
+                      title: _searchQuery.isEmpty ? 'Belum Ada Percobaan' : 'Hasil Tidak Ditemukan',
+                      description: _searchQuery.isEmpty
+                          ? 'Belum ada mahasiswa yang menyelesaikan kuis ini.'
+                          : 'Tidak ada detail percobaan dengan nama "$_searchQuery".',
+                      icon: Icons.assignment_outlined,
+                      illustrationType: EmptyIllustrationType.noAttempt,
                     )
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: attempts.length,
+                      itemCount: filteredAttempts.length,
                       itemBuilder: (context, index) {
-                        final attempt = attempts[index];
-                        return Card(
-                          color: AppTheme.getSurface(context),
+                        final attempt = filteredAttempts[index];
+                        return Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: AppTheme.getBorderColor(context),
-                            ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.getSurface(context),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppTheme.getBorderColor(context)),
+                            boxShadow: AppTheme.premiumShadow,
                           ),
-                          child: ExpansionTile(
-                            leading: CircleAvatar(
-                              backgroundColor: AppTheme.getSurfaceLight(
-                                context,
-                              ),
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              leading: CircleAvatar(
+                                backgroundColor: AppTheme.getSurfaceLight(context),
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.getTextPrimary(context),
+                                  ),
                                 ),
                               ),
-                            ),
-                            title: Text(
-                              attempt.studentName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                              title: Text(
+                                attempt.studentName,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
-                            ),
-                            subtitle: Text(
-                              'Skor: ${attempt.score} • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}',
-                            ),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Rincian Jawaban:',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                              subtitle: Text(
+                                'Skor: ${attempt.score} • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Rincian Jawaban:',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ..._selectedQuiz!.questions.map((question) {
-                                      final studentAnswer =
-                                          attempt.answers[question.id] ??
-                                          "Tidak dijawab";
-                                      final isCorrect =
-                                          studentAnswer.toLowerCase().trim() ==
-                                          question.correctAnswer
-                                              .toLowerCase()
-                                              .trim();
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 4.0,
-                                        ),
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Icon(
-                                              isCorrect
-                                                  ? Icons.check_circle
-                                                  : Icons.cancel,
-                                              color: isCorrect
-                                                  ? AppTheme.success
-                                                  : AppTheme.error,
-                                              size: 16,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: RichText(
-                                                text: TextSpan(
-                                                  text: '${question.text}\n',
-                                                  style: TextStyle(
-                                                    color:
-                                                        AppTheme.getTextPrimary(
-                                                          context,
-                                                        ),
-                                                    fontSize: 13,
-                                                    height: 1.4,
-                                                  ),
-                                                  children: [
-                                                    TextSpan(
-                                                      text:
-                                                          'Jawaban: $studentAnswer ',
-                                                      style: TextStyle(
-                                                        color: isCorrect
-                                                            ? AppTheme.success
-                                                            : AppTheme.error,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
+                                      const SizedBox(height: 8),
+                                      ..._selectedQuiz!.questions.map((question) {
+                                        final studentAnswer =
+                                            attempt.answers[question.id] ??
+                                            "Tidak dijawab";
+                                        final isCorrect =
+                                            studentAnswer.toLowerCase().trim() ==
+                                            question.correctAnswer
+                                                .toLowerCase()
+                                                .trim();
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(
+                                                isCorrect
+                                                    ? Icons.check_circle
+                                                    : Icons.cancel,
+                                                color: isCorrect
+                                                    ? AppTheme.success
+                                                    : AppTheme.error,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: RichText(
+                                                  text: TextSpan(
+                                                    text: '${question.text}\n',
+                                                    style: TextStyle(
+                                                      color: AppTheme.getTextPrimary(context),
+                                                      fontSize: 13,
+                                                      height: 1.4,
                                                     ),
-                                                    if (!isCorrect)
+                                                    children: [
                                                       TextSpan(
-                                                        text:
-                                                            '(Kunci: ${question.correctAnswer})',
+                                                        text: 'Jawaban: $studentAnswer ',
                                                         style: TextStyle(
-                                                          color:
-                                                              AppTheme.getTextSecondary(
-                                                                context,
-                                                              ),
+                                                          color: isCorrect
+                                                              ? AppTheme.success
+                                                              : AppTheme.error,
+                                                          fontWeight: FontWeight.bold,
                                                         ),
                                                       ),
-                                                  ],
+                                                      if (!isCorrect)
+                                                        TextSpan(
+                                                          text: '(Kunci: ${question.correctAnswer})',
+                                                          style: TextStyle(
+                                                            color: AppTheme.getTextSecondary(context),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }),
-                                  ],
+                                            ],
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        );
+                        ).animate().fade(delay: (index * 50).ms, duration: 300.ms).slideY(begin: 0.08, end: 0);
                       },
                     ),
-            ],
-          ],
+                  ],
+                ],
+              ),
         ),
       ),
     );
@@ -674,26 +840,36 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
     IconData icon,
     Color color,
   ) {
-    return Card(
-      color: AppTheme.getSurface(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppTheme.getBorderColor(context)),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.getSurface(context),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
+        boxShadow: AppTheme.premiumShadow,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
                 fontSize: 12,
+                fontWeight: FontWeight.w500,
                 color: AppTheme.getTextSecondary(context),
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               value,
               style: TextStyle(
@@ -701,6 +877,7 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -708,7 +885,94 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
     );
   }
 
-  Widget _buildDistributionRow(String label, int count, int total) {
+  Widget _buildParticipationCard(
+    int jumlahPeserta,
+    int totalMahasiswa,
+    int jumlahAttempt,
+    int perfectScores,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.getSurface(context),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
+        boxShadow: AppTheme.premiumShadow,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warning.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.people_alt_outlined, color: AppTheme.warning, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Partisipasi & Hasil Kelas',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      Text(
+                        'Detail statistik pengerjaan mahasiswa',
+                        style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Divider(height: 1, color: AppTheme.getBorderColor(context)),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildSubStat('Peserta', '$jumlahPeserta / $totalMahasiswa', AppTheme.primary),
+                _buildSubStat('Percobaan', '$jumlahAttempt Kali', AppTheme.secondary),
+                _buildSubStat('Sempurna', '$perfectScores Siswa', AppTheme.success),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubStat(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.getTextSecondary(context),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDistributionRow(String label, int count, int total, Color color) {
     double pct = total > 0 ? count / total : 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -731,7 +995,7 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
             child: LinearProgressIndicator(
               value: pct,
               backgroundColor: AppTheme.getBorderColor(context),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 8,
             ),
           ),

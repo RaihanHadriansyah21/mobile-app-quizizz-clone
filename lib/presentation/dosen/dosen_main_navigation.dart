@@ -42,63 +42,92 @@ class _DosenMainNavigationState extends State<DosenMainNavigation> {
       const DosenProfileScreen(),
     ];
 
+    final navItems = [
+      _NavModel(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dash'),
+      _NavModel(icon: Icons.class_outlined, activeIcon: Icons.class_, label: 'Kelas'),
+      _NavModel(icon: Icons.question_answer_outlined, activeIcon: Icons.question_answer, label: 'Soal'),
+      _NavModel(icon: Icons.assignment_outlined, activeIcon: Icons.assignment, label: 'Tugas'),
+      _NavModel(icon: Icons.analytics_outlined, activeIcon: Icons.analytics, label: 'Analitik'),
+      _NavModel(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profil'),
+    ];
+
     return Scaffold(
+      extendBody: true, // Let content scroll underneath the floating nav
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppTheme.getSurface(context),
-          selectedItemColor: AppTheme.secondary, // Electric Pink for Dosen Theme
-          unselectedItemColor: AppTheme.getTextSecondary(context),
-          selectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.class_outlined),
-              activeIcon: Icon(Icons.class_),
-              label: 'Kelas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.question_answer_outlined),
-              activeIcon: Icon(Icons.question_answer),
-              label: 'Bank Soal',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined),
-              activeIcon: Icon(Icons.assignment),
-              label: 'Tugas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
-              activeIcon: Icon(Icons.analytics),
-              label: 'Analitik',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.getSurface(context),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppTheme.premiumShadow,
+            border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: navItems.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              final isSelected = _currentIndex == idx;
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentIndex = idx;
+                  });
+                },
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.primary.withOpacity(0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSelected ? item.activeIcon : item.icon,
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.getTextSecondary(context),
+                        size: 20,
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          item.label,
+                          style: const TextStyle(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
   }
+}
+
+class _NavModel {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+
+  _NavModel({required this.icon, required this.activeIcon, required this.label});
 }

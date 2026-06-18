@@ -156,6 +156,41 @@ class GameplayProvider extends ChangeNotifier {
     _isTimerActive = false;
   }
 
+  void pauseQuestionTimer() {
+    if (_isTimerActive && _timer != null) {
+      _timer?.cancel();
+      _timer = null;
+      _isTimerActive = false;
+      notifyListeners();
+      debugPrint("Timer paused. Time left: $_timeLeft seconds.");
+    }
+  }
+
+  void resumeQuestionTimer() {
+    if (_activeQuiz != null &&
+        _activeQuiz!.isTimerEnabled &&
+        currentQuestion != null &&
+        currentQuestion!.timeLimitSeconds > 0 &&
+        !_isTimerActive &&
+        _timer == null &&
+        _timeLeft > 0 &&
+        !_showFeedback) {
+      _isTimerActive = true;
+      notifyListeners();
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_timeLeft > 1) {
+          _timeLeft--;
+          notifyListeners();
+        } else {
+          _timeLeft = 0;
+          _cancelTimer();
+          answerQuestion("");
+        }
+      });
+      debugPrint("Timer resumed. Time left: $_timeLeft seconds.");
+    }
+  }
+
   void answerQuestion(String answer) {
     _cancelTimer();
     if (currentQuestion == null) return;

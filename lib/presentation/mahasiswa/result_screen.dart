@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/services.dart';
 import '../../data/providers/gameplay_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/mahasiswa_provider.dart';
@@ -32,11 +34,11 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
     } catch (e) {
       debugPrint('Error submitting quiz attempt: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menyimpan hasil: $e'),
-            backgroundColor: AppTheme.error,
-          ),
+        HapticFeedback.heavyImpact();
+        AppTheme.showPremiumSnackBar(
+          context,
+          'Gagal menyimpan hasil: $e',
+          SnackBarType.error,
         );
       }
     } finally {
@@ -63,16 +65,14 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
       accuracy = correctAnswers / totalQuestions;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         height: double.infinity,
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.background, Color(0xFF130F26)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.background : AppTheme.backgroundL,
         ),
         child: SafeArea(
           child: Padding(
@@ -84,38 +84,50 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                 const Spacer(),
                 Center(
                   child: Container(
-                    height: 120,
-                    width: 120,
+                    height: 130,
+                    width: 130,
                     decoration: BoxDecoration(
-                      color: AppTheme.secondary.withOpacity(0.1),
+                      color: AppTheme.primary.withOpacity(0.08),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.secondary.withOpacity(0.3), width: 2),
+                      border: Border.all(color: AppTheme.primary.withOpacity(0.2), width: 3),
+                      boxShadow: AppTheme.premiumShadow,
                     ),
-                    child: const Icon(
-                      Icons.emoji_events,
-                      size: 70,
-                      color: AppTheme.warning,
+                    child: const Hero(
+                      tag: 'result_trophy',
+                      child: Icon(
+                        Icons.emoji_events_rounded,
+                        size: 75,
+                        color: AppTheme.warning,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 28),
+                ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
+                const SizedBox(height: 32),
                 
-                const Text(
+                Text(
                   'Kuis Selesai! 🎉',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.getTextPrimary(context),
+                  ),
+                ).animate().fade(delay: 150.ms, duration: 300.ms),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Kerja bagus! Performa Anda telah dicatat.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.textSecondary),
-                ),
+                  style: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 15),
+                ).animate().fade(delay: 200.ms, duration: 300.ms),
                 const SizedBox(height: 40),
 
-                Card(
-                  color: AppTheme.surface,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white10)),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.getSurface(context),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
+                    boxShadow: AppTheme.premiumShadow,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
@@ -123,46 +135,103 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Skor Akhir:', style: TextStyle(color: AppTheme.textSecondary)),
-                            Text('$finalScore XP', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.secondary)),
+                            Text(
+                              'Skor Akhir:',
+                              style: TextStyle(
+                                color: AppTheme.getTextSecondary(context),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '$finalScore XP',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.secondary,
+                              ),
+                            ),
                           ],
                         ),
-                        const Divider(height: 24, color: Colors.white10),
+                        Divider(height: 32, color: AppTheme.getBorderColor(context)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Akurasi Jawaban:', style: TextStyle(color: AppTheme.textSecondary)),
-                            Text('${(accuracy * 100).round()}%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.accent)),
+                            Text(
+                              'Akurasi Jawaban:',
+                              style: TextStyle(
+                                color: AppTheme.getTextSecondary(context),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '${(accuracy * 100).round()}%',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primary,
+                              ),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Benar / Total:', style: TextStyle(color: AppTheme.textSecondary)),
-                            Text('$correctAnswers dari $totalQuestions', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text(
+                              'Benar / Total:',
+                              style: TextStyle(
+                                color: AppTheme.getTextSecondary(context),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '$correctAnswers dari $totalQuestions',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.getTextPrimary(context),
+                              ),
+                            ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                ),
+                ).animate().fade(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
                 const Spacer(),
 
-                ElevatedButton(
-                  onPressed: _submitting ? null : _handleBackToDashboard,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    backgroundColor: AppTheme.primary,
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: AppTheme.primaryGradient,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                        )
-                      : const Text('Kembali ke Dashboard'),
-                ),
+                  child: ElevatedButton(
+                    onPressed: _submitting ? null : _handleBackToDashboard,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _submitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          )
+                        : const Text('Kembali ke Dashboard'),
+                  ),
+                ).animate().fade(delay: 350.ms, duration: 300.ms),
                 const SizedBox(height: 20),
               ],
             ),

@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/services.dart';
 import '../../data/providers/gameplay_provider.dart';
 import '../../data/models/question_model.dart';
 import '../../data/models/powerup_model.dart';
@@ -20,9 +23,27 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   final _openAnswerController = TextEditingController();
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlayingAudio = false;
+  StreamSubscription<PlayerState>? _audioStateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioStateSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      final gameplay = Provider.of<GameplayProvider>(context, listen: false);
+      if (state == PlayerState.playing) {
+        setState(() => _isPlayingAudio = true);
+        gameplay.pauseQuestionTimer();
+      } else {
+        setState(() => _isPlayingAudio = false);
+        gameplay.resumeQuestionTimer();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _audioStateSubscription?.cancel();
     _openAnswerController.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -32,31 +53,29 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     try {
       if (_isPlayingAudio) {
         await _audioPlayer.pause();
-        setState(() => _isPlayingAudio = false);
       } else {
         if (path.startsWith('http')) {
           await _audioPlayer.play(UrlSource(path));
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🔊 Memutar klip suara kuis dari server...'),
-              duration: Duration(seconds: 2),
-            ),
+          HapticFeedback.lightImpact();
+          AppTheme.showPremiumSnackBar(
+            context,
+            'Memutar klip suara kuis dari server...',
+            SnackBarType.info,
           );
         } else if (path.endsWith('.mp3')) {
           if (await File(path).exists()) {
             await _audioPlayer.play(DeviceFileSource(path));
           } else {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('🔊 Memutar klip suara kuis...'),
-                duration: Duration(seconds: 2),
-              ),
+            HapticFeedback.lightImpact();
+            AppTheme.showPremiumSnackBar(
+              context,
+              'Memutar klip suara kuis...',
+              SnackBarType.info,
             );
           }
         }
-        setState(() => _isPlayingAudio = true);
       }
     } catch (e) {
       debugPrint("Audio error: $e");
@@ -84,6 +103,10 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       );
     }
 
+    if (gameplay.showFeedback && _isPlayingAudio) {
+      Future.microtask(() => _audioPlayer.stop());
+    }
+
     final audioPathToPlay = question.audioUrl ?? question.audioPath;
     final displayImageUrl = question.imageUrl ?? question.memeUrl ?? question.imagePath;
 
@@ -109,13 +132,14 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                     children: [
                       Text(
                         'Soal ${gameplay.currentQuestionIndex + 1} dari ${gameplay.activeQuiz?.questions.length}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       Text(
                         'Skor: ${gameplay.score} XP',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppTheme.secondary,
+                          fontSize: 15,
                         ),
                       ),
                     ],
@@ -123,24 +147,44 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                   const SizedBox(height: 12),
                   if (gameplay.activeQuiz!.isTimerEnabled &&
                       question.timeLimitSeconds > 0)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: timerPercentage,
-                        minHeight: 8,
-                        backgroundColor: Colors.white10,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          timerPercentage > 0.3
-                              ? AppTheme.primary
-                              : AppTheme.error,
-                        ),
+                    Container(
+                      height: 12,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppTheme.getSurfaceLight(context),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppTheme.getBorderColor(context)),
+                      ),
+                      child: Stack(
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: constraints.maxWidth * timerPercentage,
+                                height: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                  gradient: timerPercentage > 0.3
+                                      ? const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF10B981)])
+                                      : const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFEF4444)]),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   const SizedBox(height: 24),
 
                   Expanded(
-                    child: Card(
-                      color: AppTheme.surface,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.getSurface(context),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppTheme.getBorderColor(context)),
+                        boxShadow: AppTheme.premiumShadow,
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -154,7 +198,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primary.withOpacity(0.2),
+                                  color: AppTheme.primary.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -181,21 +225,33 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
                             if (audioPathToPlay != null && audioPathToPlay.isNotEmpty) ...[
                               Center(
-                                child: ElevatedButton.icon(
-                                  onPressed: () =>
-                                      _playQuestionAudio(audioPathToPlay),
-                                  icon: Icon(
-                                    _isPlayingAudio
-                                        ? Icons.pause
-                                        : Icons.play_arrow,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: AppTheme.accentGradient,
                                   ),
-                                  label: Text(
-                                    _isPlayingAudio
-                                        ? 'Jeda Audio'
-                                        : 'Putar Audio Soal',
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.accent,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () =>
+                                        _playQuestionAudio(audioPathToPlay),
+                                    icon: Icon(
+                                      _isPlayingAudio
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                      color: Colors.white,
+                                    ),
+                                    label: Text(
+                                      _isPlayingAudio
+                                          ? 'Jeda Audio'
+                                          : 'Putar Audio Soal',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -205,7 +261,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                             if (displayImageUrl != null && displayImageUrl.isNotEmpty) ...[
                               Expanded(
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
                                   child: displayImageUrl.startsWith('http')
                                       ? Image.network(
                                           displayImageUrl,
@@ -217,7 +273,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                                             );
                                           },
                                           errorBuilder: (context, error, stackTrace) => Container(
-                                            color: AppTheme.surfaceLight,
+                                            color: AppTheme.getSurfaceLight(context),
                                             child: const Center(
                                               child: Icon(
                                                 Icons.broken_image_outlined,
@@ -233,21 +289,21 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                                               fit: BoxFit.contain,
                                             )
                                           : Container(
-                                              color: AppTheme.surfaceLight,
-                                              child: const Column(
+                                              color: AppTheme.getSurfaceLight(context),
+                                              child: Column(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.center,
                                                 children: [
                                                   Icon(
                                                     Icons.image_outlined,
                                                     size: 50,
-                                                    color: AppTheme.textSecondary,
+                                                    color: AppTheme.getTextSecondary(context),
                                                   ),
-                                                  SizedBox(height: 8),
+                                                  const SizedBox(height: 8),
                                                   Text(
                                                     '[Image Attachment]',
                                                     style: TextStyle(
-                                                      color: AppTheme.textSecondary,
+                                                      color: AppTheme.getTextSecondary(context),
                                                       fontStyle: FontStyle.italic,
                                                     ),
                                                   ),
@@ -261,7 +317,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                           ],
                         ),
                       ),
-                    ),
+                    ).animate(key: ValueKey(gameplay.currentQuestionIndex))
+                     .fade(duration: 300.ms)
+                     .slideY(begin: 0.08, end: 0, curve: Curves.easeOutQuad),
                   ),
                   const SizedBox(height: 24),
 
@@ -271,13 +329,14 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                   Text(
                     'Item Power-Up / Booster',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
+                      fontSize: 13,
+                      color: AppTheme.getTextSecondary(context),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    height: 60,
+                    height: 64,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: gameplay.powerUps.length,
@@ -308,34 +367,57 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     PowerUpModel powerup,
     bool isEnabled,
   ) {
+    final emoji = powerup.type == PowerUpType.doubleScore
+        ? '🚀'
+        : powerup.type == PowerUpType.freezeTimer
+        ? '❄️'
+        : powerup.type == PowerUpType.fiftyFifty
+        ? '✂️'
+        : '🛡️';
+        
+    final name = powerup.type == PowerUpType.doubleScore
+        ? 'Double'
+        : powerup.type == PowerUpType.freezeTimer
+        ? 'Beku'
+        : powerup.type == PowerUpType.fiftyFifty
+        ? '50:50'
+        : 'Perisai';
+
     return GestureDetector(
-      onTap: isEnabled ? () => gameplay.usePowerUp(powerup) : null,
-      child: Container(
+      onTap: isEnabled ? () {
+        HapticFeedback.mediumImpact();
+        gameplay.usePowerUp(powerup);
+      } : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: 140,
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isEnabled
-              ? AppTheme.surfaceLight
-              : AppTheme.surface.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(12),
+              ? AppTheme.getSurfaceLight(context)
+              : AppTheme.getSurface(context).withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isEnabled
-                ? AppTheme.accent.withOpacity(0.5)
-                : Colors.white10,
-            width: 1.5,
+                ? AppTheme.accent.withOpacity(0.6)
+                : AppTheme.getBorderColor(context),
+            width: 2,
           ),
+          boxShadow: isEnabled ? AppTheme.premiumShadow : [],
         ),
         child: Row(
           children: [
-            Text(
-              powerup.type == PowerUpType.doubleScore
-                  ? '🚀'
-                  : powerup.type == PowerUpType.freezeTimer
-                  ? '❄️'
-                  : powerup.type == PowerUpType.fiftyFifty
-                  ? '✂️'
-                  : '🛡️',
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isEnabled ? AppTheme.accent.withOpacity(0.1) : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                emoji,
+                style: const TextStyle(fontSize: 18),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -344,24 +426,20 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    powerup.type == PowerUpType.doubleScore
-                        ? 'Double'
-                        : powerup.type == PowerUpType.freezeTimer
-                        ? 'Beku'
-                        : powerup.type == PowerUpType.fiftyFifty
-                        ? '50:50'
-                        : 'Perisai',
+                    name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                      color: isEnabled ? Colors.white : AppTheme.textSecondary,
+                      fontSize: 12,
+                      color: isEnabled
+                          ? AppTheme.getTextPrimary(context)
+                          : AppTheme.getTextSecondary(context),
                     ),
                   ),
                   Text(
                     'Tersedia: ${powerup.count}',
-                    style: const TextStyle(
-                      fontSize: 9,
-                      color: AppTheme.textSecondary,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.getTextSecondary(context),
                     ),
                   ),
                 ],
@@ -376,42 +454,90 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   Widget _buildAnswersInput(QuestionModel question, GameplayProvider gameplay) {
     if (question.type == QuestionType.multipleChoice ||
         question.type == QuestionType.trueFalse) {
-      return GridView.count(
-        crossAxisCount: 2,
+      
+      return GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.8,
+        ),
+        itemCount: question.options.length,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2.2,
-        children: question.options.map((option) {
+        itemBuilder: (context, index) {
+          final option = question.options[index];
           final isPruned = gameplay.prunedOptions.contains(option);
 
-          return ElevatedButton(
-            onPressed: isPruned ? null : () => gameplay.answerQuestion(option),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isPruned
-                  ? Colors.white10
-                  : AppTheme.surfaceLight,
-              side: isPruned
-                  ? BorderSide.none
-                  : const BorderSide(color: Colors.white10),
-            ),
-            child: Text(
-              isPruned ? '' : option,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
+          return GestureDetector(
+            onTap: isPruned ? null : () {
+              HapticFeedback.mediumImpact();
+              _audioPlayer.stop();
+              gameplay.answerQuestion(option);
+            },
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: isPruned ? 0.3 : 1.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppTheme.getBorderColor(context),
+                    width: 1.5,
+                  ),
+                  boxShadow: isPruned ? [] : AppTheme.premiumShadow,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 6,
+                        child: Container(
+                          color: isPruned 
+                              ? AppTheme.getBorderColor(context) 
+                              : AppTheme.primary.withOpacity(0.6),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        child: Center(
+                          child: Text(
+                            isPruned ? '' : option,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isPruned 
+                                  ? AppTheme.getTextSecondary(context)
+                                  : AppTheme.getTextPrimary(context),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          );
-        }).toList(),
+          ).animate(key: ValueKey('${gameplay.currentQuestionIndex}_$index'))
+           .scale(delay: (index * 50).ms, duration: 300.ms, curve: Curves.easeOutBack);
+        },
       );
     } else {
-      return Card(
-        color: AppTheme.surface,
+      return Container(
+        decoration: BoxDecoration(
+          color: AppTheme.getSurface(context),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.getBorderColor(context)),
+          boxShadow: AppTheme.premiumShadow,
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           child: Row(
             children: [
               Expanded(
@@ -422,21 +548,31 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
+                    filled: false,
                   ),
+                  style: TextStyle(color: AppTheme.getTextPrimary(context)),
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  gameplay.answerQuestion(_openAnswerController.text);
-                  _openAnswerController.clear();
-                },
-                child: const Icon(Icons.send),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppTheme.doubleGradient,
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    _audioPlayer.stop();
+                    gameplay.answerQuestion(_openAnswerController.text);
+                    _openAnswerController.clear();
+                  },
+                  icon: const Icon(Icons.send, color: Colors.white),
+                ),
               ),
             ],
           ),
         ),
-      );
+      ).animate().fade(duration: 300.ms).slideY(begin: 0.2, end: 0);
     }
   }
 
@@ -444,92 +580,110 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     final isCorrect = gameplay.isAnswerCorrect;
 
     return Container(
-      color: Colors.black.withOpacity(0.9),
-      alignment: Alignment.center,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isCorrect ? Icons.check_circle_outline : Icons.cancel_outlined,
-            color: isCorrect ? AppTheme.success : AppTheme.error,
-            size: 100,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isCorrect ? 'JAWABAN BENAR! 🎉' : 'JAWABAN SALAH 😭',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: isCorrect ? AppTheme.success : AppTheme.error,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isCorrect ? '+${gameplay.currentQuestion?.points} XP' : '+0 XP',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 40),
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isCorrect ? Icons.check_circle_outline : Icons.cancel_outlined,
+                color: isCorrect ? AppTheme.success : AppTheme.error,
+                size: 100,
+              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+              const SizedBox(height: 16),
+              Text(
+                isCorrect ? 'JAWABAN BENAR! 🎉' : 'JAWABAN SALAH 😭',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isCorrect ? AppTheme.success : AppTheme.error,
+                ),
+              ).animate().fade(delay: 100.ms, duration: 300.ms),
+              const SizedBox(height: 8),
+              Text(
+                isCorrect ? '+${gameplay.currentQuestion?.points} XP' : '+0 XP',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ).animate().fade(delay: 200.ms, duration: 300.ms),
+              const SizedBox(height: 32),
 
-          Container(
-            padding: const EdgeInsets.all(24),
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isCorrect
-                    ? AppTheme.success.withOpacity(0.3)
-                    : AppTheme.error.withOpacity(0.3),
-                width: 2,
-              ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  gameplay.memeText,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              Container(
+                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isCorrect
+                        ? AppTheme.success.withOpacity(0.4)
+                        : AppTheme.error.withOpacity(0.4),
+                    width: 2,
                   ),
-                  textAlign: TextAlign.center,
+                  boxShadow: AppTheme.premiumShadow,
                 ),
-                const SizedBox(height: 16),
-                // Reaction meme card. Shows your real media from assets/memes/.
-                // Supports images (.jpeg/.jpg/.png/.gif) AND videos (.mp4).
-                // Keyed by path so a fresh video controller is built per meme.
-                // Falls back to a built-in emoji card if a file is missing.
-                MemeMediaCard(
-                  key: ValueKey(gameplay.memeImage),
-                  path: gameplay.memeImage,
-                  fallback: _buildEmojiMeme(gameplay, isCorrect),
+                child: Column(
+                  children: [
+                    Text(
+                      gameplay.memeText,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.getTextPrimary(context),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    MemeMediaCard(
+                      key: ValueKey(gameplay.memeImage),
+                      path: gameplay.memeImage,
+                      fallback: _buildEmojiMeme(gameplay, isCorrect),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 50),
+              ).animate().fade(delay: 300.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              const SizedBox(height: 40),
 
-          ElevatedButton(
-            onPressed: () {
-              gameplay.dismissFeedback();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isCorrect ? AppTheme.success : AppTheme.error,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-            ),
-            child: const Text('Ketuk untuk Melanjutkan'),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: isCorrect
+                      ? AppTheme.successGradient
+                      : const LinearGradient(colors: [AppTheme.error, AppTheme.secondary]),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isCorrect ? AppTheme.success : AppTheme.error).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    gameplay.dismissFeedback();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('Ketuk untuk Melanjutkan'),
+                ),
+              ).animate().fade(delay: 400.ms, duration: 300.ms),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // Default reaction card: a colored gradient with a big reaction emoji.
-  // Works without any image assets.
   Widget _buildEmojiMeme(GameplayProvider gameplay, bool isCorrect) {
     return Container(
       height: 150,
@@ -624,11 +778,12 @@ class _MemeMediaCardState extends State<MemeMediaCard> {
       }
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          height: 150,
+        child: Container(
+          height: 200,
           width: double.infinity,
+          color: Colors.black.withOpacity(0.15),
           child: FittedBox(
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             clipBehavior: Clip.hardEdge,
             child: SizedBox(
               width: _controller!.value.size.width,
@@ -643,12 +798,15 @@ class _MemeMediaCardState extends State<MemeMediaCard> {
     // Image path (jpeg/jpg/png/gif).
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: Image.asset(
-        widget.path,
-        height: 150,
+      child: Container(
+        height: 200,
         width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => widget.fallback,
+        color: Colors.black.withOpacity(0.15),
+        child: Image.asset(
+          widget.path,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => widget.fallback,
+        ),
       ),
     );
   }

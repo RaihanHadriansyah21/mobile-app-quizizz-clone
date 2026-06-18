@@ -164,8 +164,6 @@ class DbService {
     final Map<String, dynamic> cleaned = Map.from(json);
     if (table == 'users') {
       cleaned.remove('password');
-    } else if (table == 'quizzes') {
-      cleaned.remove('maxAttempts');
     } else if (table == 'attempts') {
       cleaned.remove('fastest_correct_seconds');
       cleaned.remove('power_ups_used');

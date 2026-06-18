@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/user_model.dart';
@@ -171,13 +172,11 @@ class AdminDashboardScreen extends StatelessWidget {
 
                     if (context.mounted) {
                       Navigator.pop(dialogCtx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Akun ${selectedRole.name.toUpperCase()} berhasil dibuat! 👤',
-                          ),
-                          backgroundColor: AppTheme.success,
-                        ),
+                      HapticFeedback.mediumImpact();
+                      AppTheme.showPremiumSnackBar(
+                        context,
+                        'Akun ${selectedRole.name.toUpperCase()} berhasil dibuat!',
+                        SnackBarType.success,
                       );
                     }
                   },

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_theme.dart';
 
-class LoadingSkeleton extends StatefulWidget {
+class LoadingSkeleton extends StatelessWidget {
   final double width;
   final double height;
   final double borderRadius;
@@ -14,50 +15,24 @@ class LoadingSkeleton extends StatefulWidget {
   });
 
   @override
-  State<LoadingSkeleton> createState() => _LoadingSkeletonState();
-}
-
-class _LoadingSkeletonState extends State<LoadingSkeleton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _animation = Tween<double>(begin: 0.3, end: 0.8).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _animation.value,
-          child: Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
-              borderRadius: BorderRadius.circular(widget.borderRadius),
-            ),
-          ),
+    final baseColor = AppTheme.getSurfaceLight(context);
+    final shimmerColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white.withOpacity(0.05)
+        : Colors.black.withOpacity(0.03);
+
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+    )
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .shimmer(
+          duration: 1500.ms,
+          color: shimmerColor,
         );
-      },
-    );
   }
 }

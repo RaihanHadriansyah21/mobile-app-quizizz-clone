@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter/services.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/mahasiswa_provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -37,15 +38,18 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
 
     if (mounted) {
       if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: AppTheme.error),
+        HapticFeedback.heavyImpact();
+        AppTheme.showPremiumSnackBar(
+          context,
+          error,
+          SnackBarType.error,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Berhasil bergabung ke kelas! 🎓"),
-            backgroundColor: AppTheme.success,
-          ),
+        HapticFeedback.mediumImpact();
+        AppTheme.showPremiumSnackBar(
+          context,
+          "Berhasil bergabung ke kelas!",
+          SnackBarType.success,
         );
         _codeController.clear();
       }

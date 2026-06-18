@@ -39,53 +39,90 @@ class _MahasiswaMainNavigationState extends State<MahasiswaMainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final navItems = [
+      _NavModel(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Beranda'),
+      _NavModel(icon: Icons.add_circle_outline, activeIcon: Icons.add_circle, label: 'Gabung'),
+      _NavModel(icon: Icons.leaderboard_outlined, activeIcon: Icons.leaderboard, label: 'Peringkat'),
+      _NavModel(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profil'),
+    ];
+
     return Scaffold(
+      extendBody: true, // Let the scaffold content flow behind the floating nav bar
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppTheme.getSurface(context),
-          selectedItemColor: AppTheme.primary, // Deep Neon Purple for Mahasiswa Theme
-          unselectedItemColor: AppTheme.getTextSecondary(context),
-          selectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline),
-              activeIcon: Icon(Icons.add_circle),
-              label: 'Gabung Kelas',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.leaderboard_outlined),
-              activeIcon: Icon(Icons.leaderboard),
-              label: 'Peringkat',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.getSurface(context),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppTheme.premiumShadow,
+            border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: navItems.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              final isSelected = _currentIndex == idx;
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentIndex = idx;
+                  });
+                },
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.primary.withOpacity(0.12)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSelected ? item.activeIcon : item.icon,
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.getTextSecondary(context),
+                        size: 22,
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          item.label,
+                          style: const TextStyle(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
   }
+}
+
+class _NavModel {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+
+  _NavModel({required this.icon, required this.activeIcon, required this.label});
 }

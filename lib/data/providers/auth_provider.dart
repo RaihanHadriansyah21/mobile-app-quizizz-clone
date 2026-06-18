@@ -246,4 +246,13 @@ class AuthProvider extends ChangeNotifier {
     _currentUser = updated;
     notifyListeners();
   }
+
+  Future<void> refreshProfile() async {
+    if (_currentUser == null) return;
+    UserModel? updated = DbService.getUserByEmail(_currentUser!.email);
+    if (updated != null) {
+      _currentUser = updated;
+      notifyListeners();
+    }
+  }
 }

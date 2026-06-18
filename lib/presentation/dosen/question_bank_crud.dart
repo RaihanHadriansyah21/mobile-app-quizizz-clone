@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../data/models/quiz_model.dart';
@@ -10,6 +11,10 @@ import '../../data/services/file_service.dart';
 import '../../data/services/db_service.dart';
 import '../../core/theme/app_theme.dart';
 import 'quiz_assignment_crud.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/loading_skeleton.dart';
+import '../../core/widgets/dosen_speed_dial.dart';
+import 'class_crud.dart';
 
 class QuestionBankCrudScreen extends StatefulWidget {
   const QuestionBankCrudScreen({super.key});
@@ -19,10 +24,19 @@ class QuestionBankCrudScreen extends StatefulWidget {
 }
 
 class _QuestionBankCrudScreenState extends State<QuestionBankCrudScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _openQuizEditor(QuizModel? quiz) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => QuizEditorScreen(quiz: quiz)),
+      AppTheme.pageRoute(QuizEditorScreen(quiz: quiz)),
     );
   }
 
@@ -31,6 +45,10 @@ class _QuestionBankCrudScreenState extends State<QuestionBankCrudScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.getSurface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppTheme.getBorderColor(context)),
+        ),
         title: const Text(
           'Hapus Kuis',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -52,12 +70,20 @@ class _QuestionBankCrudScreenState extends State<QuestionBankCrudScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
-            onPressed: () {
-              Provider.of<DosenProvider>(
+            onPressed: () async {
+              HapticFeedback.mediumImpact();
+              await Provider.of<DosenProvider>(
                 context,
                 listen: false,
               ).deleteQuiz(quizId);
-              Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+                AppTheme.showPremiumSnackBar(
+                  context,
+                  'Kuis berhasil dihapus!',
+                  SnackBarType.success,
+                );
+              }
             },
             child: const Text('Hapus'),
           ),
@@ -66,10 +92,97 @@ class _QuestionBankCrudScreenState extends State<QuestionBankCrudScreen> {
     );
   }
 
+  Widget _buildSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
+        boxShadow: AppTheme.premiumShadow,
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (val) {
+          setState(() {
+            _searchQuery = val.trim();
+          });
+        },
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search, color: AppTheme.primary, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          hintText: 'Cari kuis...',
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return Card(
+          color: AppTheme.getSurface(context),
+          margin: const EdgeInsets.only(bottom: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppTheme.getBorderColor(context)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    LoadingSkeleton(width: 180, height: 18, borderRadius: 4),
+                    LoadingSkeleton(width: 24, height: 24, borderRadius: 12),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                LoadingSkeleton(width: 220, height: 14, borderRadius: 4),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    LoadingSkeleton(width: 100, height: 14, borderRadius: 4),
+                    LoadingSkeleton(width: 70, height: 14, borderRadius: 4),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DosenProvider>();
     final quizzes = provider.quizzes;
+    final isLoading = provider.isLoading;
+
+    final filteredQuizzes = quizzes
+        .where((q) => q.title.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -79,31 +192,60 @@ class _QuestionBankCrudScreenState extends State<QuestionBankCrudScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.secondary),
-            onPressed: () => provider.refreshData(),
-          ),
-        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppTheme.secondary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-        onPressed: () => _openQuizEditor(null),
+      floatingActionButton: DosenSpeedDial(
+        onCreateClass: () {
+          // Open dialog by pushing class screen first or showing class dialog
+          // To be simple, route to Class screen tab or open the class dialog on this context
+          Navigator.push(
+            context,
+            AppTheme.pageRoute(const DosenClassCrudScreen()),
+          );
+        },
+        onCreateQuiz: () => _openQuizEditor(null),
+        onCreateQuestion: () {
+          showDialog(
+            context: context,
+            builder: (ctx) => QuestionFormDialog(
+              question: null,
+              onSave: (newQuestion) async {
+                await DbService.saveQuestion(newQuestion);
+                HapticFeedback.mediumImpact();
+                if (context.mounted) {
+                  AppTheme.showPremiumSnackBar(
+                    context,
+                    'Soal baru berhasil ditambahkan ke bank soal!',
+                    SnackBarType.success,
+                  );
+                }
+              },
+            ),
+          );
+        },
       ),
-      body: quizzes.isEmpty
-          ? Center(
-              child: Text(
-                'Belum ada kuis. Klik tombol + untuk membuat baru.',
-                style: TextStyle(color: AppTheme.getTextSecondary(context)),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: quizzes.length,
-              itemBuilder: (context, index) {
-                final quiz = quizzes[index];
+      body: RefreshIndicator(
+        onRefresh: () => provider.refreshData(),
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            Expanded(
+              child: isLoading
+                  ? _buildSkeletonList()
+                  : filteredQuizzes.isEmpty
+                      ? EmptyState(
+                          title: _searchQuery.isEmpty ? 'Belum Ada Kuis' : 'Kuis Tidak Ditemukan',
+                          description: _searchQuery.isEmpty
+                              ? 'Belum ada kuis yang dibuat. Klik tombol + untuk membuat kuis baru!'
+                              : 'Tidak ada kuis dengan judul "$_searchQuery".',
+                          icon: Icons.quiz_outlined,
+                          illustrationType: EmptyIllustrationType.noQuiz,
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 100),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: filteredQuizzes.length,
+                          itemBuilder: (context, index) {
+                            final quiz = filteredQuizzes[index];
                 return Card(
                   color: AppTheme.getSurface(context),
                   margin: const EdgeInsets.only(bottom: 16),
@@ -211,8 +353,12 @@ class _QuestionBankCrudScreenState extends State<QuestionBankCrudScreen> {
                     ),
                   ),
                 );
-              },
+                          },
+                        ),
             ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -288,11 +434,11 @@ class _QuizEditorScreenState extends State<QuizEditorScreen> {
     await provider.saveQuiz(quiz);
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kuis berhasil disimpan! 🎉'),
-          backgroundColor: AppTheme.success,
-        ),
+      HapticFeedback.mediumImpact();
+      AppTheme.showPremiumSnackBar(
+        context,
+        'Kuis berhasil disimpan!',
+        SnackBarType.success,
       );
     }
   }
@@ -685,8 +831,11 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
     } catch (e) {
       debugPrint("Media upload failed: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal mengunggah media: $e"), backgroundColor: AppTheme.error),
+        HapticFeedback.heavyImpact();
+        AppTheme.showPremiumSnackBar(
+          context,
+          "Gagal mengunggah media: $e",
+          SnackBarType.error,
         );
         setState(() => _isUploadingMedia = false);
       }

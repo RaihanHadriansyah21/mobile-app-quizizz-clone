@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/class_model.dart';
 import '../../data/models/quiz_model.dart';
@@ -79,9 +80,20 @@ class _ClassroomSyncScreenState extends State<ClassroomSyncScreen> {
   }
 
   void _snack(String msg, Color color) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+    SnackBarType type = SnackBarType.info;
+    if (color == AppTheme.success) {
+      type = SnackBarType.success;
+      HapticFeedback.mediumImpact();
+    } else if (color == AppTheme.error) {
+      type = SnackBarType.error;
+      HapticFeedback.heavyImpact();
+    } else if (color == AppTheme.warning) {
+      type = SnackBarType.warning;
+      HapticFeedback.lightImpact();
+    } else {
+      HapticFeedback.lightImpact();
+    }
+    AppTheme.showPremiumSnackBar(context, msg, type);
   }
 
   @override

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/mahasiswa_provider.dart';
 import '../../data/services/db_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/loading_skeleton.dart';
 import 'join_class.dart';
 import 'class_detail.dart';
 
@@ -70,15 +73,18 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
                           if (context.mounted) {
                             Navigator.pop(dialogCtx);
                             if (error != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(error), backgroundColor: AppTheme.error),
+                              HapticFeedback.heavyImpact();
+                              AppTheme.showPremiumSnackBar(
+                                context,
+                                error,
+                                SnackBarType.error,
                               );
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Berhasil bergabung ke kelas! 🎓"),
-                                  backgroundColor: AppTheme.success,
-                                ),
+                              HapticFeedback.mediumImpact();
+                              AppTheme.showPremiumSnackBar(
+                                context,
+                                "Berhasil bergabung ke kelas!",
+                                SnackBarType.success,
                               );
                             }
                           }
@@ -110,15 +116,18 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
             
             if (context.mounted) {
               if (error != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(error), backgroundColor: AppTheme.error),
+                HapticFeedback.heavyImpact();
+                AppTheme.showPremiumSnackBar(
+                  context,
+                  error,
+                  SnackBarType.error,
                 );
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Berhasil bergabung ke kelas! 🎓"),
-                    backgroundColor: AppTheme.success,
-                  ),
+                HapticFeedback.mediumImpact();
+                AppTheme.showPremiumSnackBar(
+                  context,
+                  "Berhasil bergabung ke kelas!",
+                  SnackBarType.success,
                 );
               }
             }
@@ -142,218 +151,430 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
     // If student hasn't joined any classes, show the Empty State!
     if (provider.joinedClasses.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Dashboard Mahasiswa', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: EmptyState(
-          title: 'Belum ada kelas yang diikuti',
-          description: 'Silakan bergabung dengan kelas menggunakan kode kelas atau memindai QR Code dari Dosen Anda.',
-          icon: Icons.school_outlined,
-          extraActions: [
-            ElevatedButton.icon(
-              onPressed: () => _showJoinCodeDialog(context),
-              icon: const Icon(Icons.pin),
-              label: const Text('Gabung dengan Kode Kelas'),
-            ),
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.accent,
-                side: const BorderSide(color: AppTheme.accent, width: 1.5),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Custom Minimal Greeting Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Selamat Datang,',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.getTextSecondary(context),
+                          ),
+                        ),
+                        Text(
+                          student.name,
+                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getTextPrimary(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppTheme.primary.withOpacity(0.12),
+                      child: Text(
+                        student.name.isNotEmpty ? student.name[0].toUpperCase() : 'M',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              onPressed: () => _startQrScanner(context),
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan QR Code Kelas'),
-            ),
-          ],
+              Expanded(
+                child: EmptyState(
+                  title: 'Belum ada kelas yang diikuti',
+                  description: 'Silakan bergabung dengan kelas menggunakan kode kelas atau memindai QR Code dari Dosen Anda.',
+                  icon: Icons.school_outlined,
+                  extraActions: [
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.doubleGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withOpacity(0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showJoinCodeDialog(context),
+                        icon: const Icon(Icons.pin, color: Colors.white),
+                        label: const Text('Gabung dengan Kode Kelas', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.secondary,
+                        side: const BorderSide(color: AppTheme.secondary, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () => _startQrScanner(context),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Scan QR Code Kelas', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Mahasiswa', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await provider.refreshData(student.id);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    Widget buildSkeletonBody() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Profile Quick Stats Card
-              Card(
-                color: AppTheme.getSurface(context),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppTheme.getBorderColor(context))),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LoadingSkeleton(width: 100, height: 14, borderRadius: 4),
+                  const SizedBox(height: 6),
+                  LoadingSkeleton(width: 160, height: 26, borderRadius: 6),
+                ],
+              ),
+              LoadingSkeleton(width: 52, height: 52, borderRadius: 26),
+            ],
+          ),
+          const SizedBox(height: 24),
+          LoadingSkeleton(width: double.infinity, height: 110, borderRadius: 24),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: LoadingSkeleton(width: double.infinity, height: 48, borderRadius: 16)),
+              const SizedBox(width: 12),
+              Expanded(child: LoadingSkeleton(width: double.infinity, height: 48, borderRadius: 16)),
+            ],
+          ),
+          const SizedBox(height: 32),
+          LoadingSkeleton(width: 180, height: 20, borderRadius: 4),
+          const SizedBox(height: 12),
+          LoadingSkeleton(width: double.infinity, height: 80, borderRadius: 20),
+          const SizedBox(height: 12),
+          LoadingSkeleton(width: double.infinity, height: 80, borderRadius: 20),
+        ],
+      );
+    }
+
+    return Scaffold(
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await provider.refreshData(student.id);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
+            child: provider.isLoading
+                ? buildSkeletonBody()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                // Custom Greeting AppBar Panel
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Selamat Datang,',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.getTextSecondary(context),
+                          ),
+                        ),
+                        Text(
+                          student.name,
+                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getTextPrimary(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Hero(
+                      tag: 'student_avatar',
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: AppTheme.secondary.withOpacity(0.12),
+                        child: Text(
+                          student.name.isNotEmpty ? student.name[0].toUpperCase() : 'M',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondary, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ).animate().fade(duration: 300.ms),
+                const SizedBox(height: 4),
+                Text(
+                  'Ready to continue learning?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: AppTheme.getTextSecondary(context),
+                  ),
+                ).animate().fade(delay: 100.ms, duration: 300.ms),
+                const SizedBox(height: 24),
+
+                // Cumulative Stats Card (Pink-Purple Gradient Card)
+                Container(
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.doubleGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.25),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
+                  ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: AppTheme.primary.withOpacity(0.2),
-                        child: const Icon(Icons.school, size: 30, color: AppTheme.primary),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.stars, size: 36, color: Colors.white),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Halo, ${student.name}!', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                            Text(
+                              'NIM: ${student.nim ?? "-"}',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
                             const SizedBox(height: 2),
-                            Text('NIM: ${student.nim ?? "-"}', style: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 13, fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 4),
-                            Text('Skor Kumulatif: $totalScore XP 🔥', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondary)),
+                            Text(
+                              'Skor Kumulatif',
+                              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              '$totalScore XP 🔥',
+                              style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 24, letterSpacing: 0.5),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
+                ).animate().scale(delay: 150.ms, duration: 350.ms, curve: Curves.easeOutBack),
+                const SizedBox(height: 20),
 
-              // Join buttons row
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showJoinCodeDialog(context),
-                      icon: const Icon(Icons.pin, size: 18),
-                      label: const Text('Gabung Kode', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.accent,
-                        side: const BorderSide(color: AppTheme.accent, width: 1.5),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () => _startQrScanner(context),
-                      icon: const Icon(Icons.qr_code_scanner, size: 18),
-                      label: const Text('Scan QR', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-
-              // Classes List Section
-              _buildSectionTitle('Kelas & Mata Kuliah Anda', Icons.class_outlined, AppTheme.primary),
-              const SizedBox(height: 12),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: provider.joinedClasses.length,
-                itemBuilder: (context, index) {
-                  final classObj = provider.joinedClasses[index];
-                  final lecturer = DbService.getUserById(classObj.teacherId);
-                  final lecturerName = lecturer?.name ?? 'Dosen Pengampu';
-
-                  return Card(
-                    color: AppTheme.getSurface(context),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppTheme.getBorderColor(context)),
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MahasiswaClassDetailScreen(classObj: classObj),
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primary.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.school, color: AppTheme.primary, size: 24),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    classObj.className,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Dosen: $lecturerName',
-                                    style: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 12),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Kode: ${classObj.code} • ${classObj.quizIds.length} Kuis Tersedia',
-                                    style: const TextStyle(color: AppTheme.secondary, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                // Quick Join Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
                           ],
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showJoinCodeDialog(context),
+                          icon: const Icon(Icons.pin, size: 18, color: Colors.white),
+                          label: const Text('Gabung Kode', style: TextStyle(fontSize: 13, color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 28),
-
-              // Past Attempts History
-              _buildSectionTitle('Riwayat Kuis Selesai', Icons.history, AppTheme.success),
-              const SizedBox(height: 12),
-              pastAttempts.isEmpty
-                  ? _buildEmptyState('Anda belum pernah mengerjakan kuis.')
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: pastAttempts.length,
-                      itemBuilder: (context, index) {
-                        final attempt = pastAttempts[index];
-                        final quiz = DbService.getQuizById(attempt.quizId);
-                        final quizTitle = quiz?.title ?? 'Kuis Terhapus';
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          color: AppTheme.getSurface(context),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppTheme.getBorderColor(context))),
-                          child: ListTile(
-                            leading: const Icon(Icons.stars, color: AppTheme.warning),
-                            title: Text(quizTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('Skor: ${attempt.score} XP • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}'),
-                            trailing: Text(
-                              attempt.completedAt.toString().substring(0, 10),
-                              style: TextStyle(fontSize: 12, color: AppTheme.getTextSecondary(context)),
-                            ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.secondary,
+                          side: const BorderSide(color: AppTheme.secondary, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        );
-                      },
+                        ),
+                        onPressed: () => _startQrScanner(context),
+                        icon: const Icon(Icons.qr_code_scanner, size: 18),
+                        label: const Text('Scan QR', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ),
                     ),
-            ],
+                  ],
+                ).animate().fade(delay: 200.ms, duration: 300.ms),
+                const SizedBox(height: 32),
+
+                // Classes List Section
+                _buildSectionTitle('Kelas & Mata Kuliah Anda', Icons.class_outlined, AppTheme.primary),
+                const SizedBox(height: 12),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: provider.joinedClasses.length,
+                  itemBuilder: (context, index) {
+                    final classObj = provider.joinedClasses[index];
+                    final lecturer = DbService.getUserById(classObj.teacherId);
+                    final lecturerName = lecturer?.name ?? 'Dosen Pengampu';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.getSurface(context),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: AppTheme.premiumShadow,
+                        border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MahasiswaClassDetailScreen(classObj: classObj),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(18.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary.withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.school, color: AppTheme.primary, size: 24),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      classObj.className,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: AppTheme.getTextPrimary(context),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Dosen: $lecturerName',
+                                      style: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Kode: ${classObj.code} • ${classObj.quizIds.length} Kuis',
+                                      style: const TextStyle(color: AppTheme.secondary, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, color: AppTheme.getTextSecondary(context)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ).animate().fade(delay: (250 + index * 50).ms, duration: 300.ms).slideX(begin: 0.05, end: 0);
+                  },
+                ),
+                const SizedBox(height: 28),
+
+                // Past Attempts History
+                _buildSectionTitle('Riwayat Kuis Selesai', Icons.history, AppTheme.success),
+                const SizedBox(height: 12),
+                pastAttempts.isEmpty
+                    ? _buildEmptyState('Anda belum pernah mengerjakan kuis.')
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: pastAttempts.length,
+                        itemBuilder: (context, index) {
+                          final attempt = pastAttempts[index];
+                          final quiz = DbService.getQuizById(attempt.quizId);
+                          final quizTitle = quiz?.title ?? 'Kuis Terhapus';
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getSurface(context),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: AppTheme.premiumShadow,
+                              border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.warning.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.stars, color: AppTheme.warning, size: 24),
+                              ),
+                              title: Text(
+                                quizTitle,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.getTextPrimary(context),
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Skor: ${attempt.score} XP • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              trailing: Text(
+                                attempt.completedAt.toString().substring(0, 10),
+                                style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context), fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ).animate().fade(delay: (300 + index * 50).ms, duration: 300.ms).slideX(begin: 0.05, end: 0);
+                        },
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),
@@ -363,7 +584,7 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
   Widget _buildSectionTitle(String title, IconData icon, Color color) {
     return Row(
       children: [
-        Icon(icon, color: color, size: 24),
+        Icon(icon, color: color, size: 22),
         const SizedBox(width: 8),
         Text(
           title,
@@ -374,16 +595,17 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
   }
 
   Widget _buildEmptyState(String text) {
-    return Card(
-      color: Colors.white.withOpacity(0.02),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white10)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceLight(context).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: AppTheme.getTextSecondary(context), fontStyle: FontStyle.italic),
       ),
     );
   }

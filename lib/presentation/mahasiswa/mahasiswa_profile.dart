@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/services.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/theme_provider.dart';
 import '../../data/services/file_service.dart';
@@ -86,11 +88,11 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil berhasil diperbarui! 🎉'),
-          backgroundColor: AppTheme.success,
-        ),
+      HapticFeedback.mediumImpact();
+      AppTheme.showPremiumSnackBar(
+        context,
+        'Profil berhasil diperbarui!',
+        SnackBarType.success,
       );
     }
   }
@@ -137,11 +139,11 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
 
               if (context.mounted) {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Sidik jari "$name" berhasil didaftarkan! 🔑'),
-                    backgroundColor: AppTheme.success,
-                  ),
+                HapticFeedback.mediumImpact();
+                AppTheme.showPremiumSnackBar(
+                  context,
+                  'Sidik jari "$name" berhasil didaftarkan!',
+                  SnackBarType.success,
                 );
               }
             },
@@ -179,8 +181,13 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await Provider.of<AuthProvider>(context, listen: false).refreshProfile();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -189,21 +196,31 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundColor: AppTheme.getSurfaceLight(context),
-                      backgroundImage: _selectedPhotoPath != null
-                          ? (_selectedPhotoPath!.startsWith('http')
-                              ? NetworkImage(_selectedPhotoPath!) as ImageProvider
-                              : FileImage(File(_selectedPhotoPath!)) as ImageProvider)
-                          : null,
-                      child: _selectedPhotoPath == null
-                          ? Icon(
-                              Icons.person,
-                              size: 60,
-                              color: AppTheme.getTextSecondary(context),
-                            )
-                          : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppTheme.primary.withOpacity(0.2), width: 4),
+                        boxShadow: AppTheme.premiumShadow,
+                      ),
+                      child: Hero(
+                        tag: 'student_avatar',
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: AppTheme.getSurfaceLight(context),
+                          backgroundImage: _selectedPhotoPath != null
+                              ? (_selectedPhotoPath!.startsWith('http')
+                                  ? NetworkImage(_selectedPhotoPath!) as ImageProvider
+                                  : FileImage(File(_selectedPhotoPath!)) as ImageProvider)
+                              : null,
+                          child: _selectedPhotoPath == null
+                              ? Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: AppTheme.getTextSecondary(context),
+                                )
+                              : null,
+                        ),
+                      ),
                     ),
                     Positioned(
                       bottom: 0,
@@ -226,13 +243,13 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                     ),
                   ],
                 ),
-              ),
+              ).animate().fade(duration: 400.ms).scale(duration: 400.ms, curve: Curves.easeOutBack),
               const SizedBox(height: 24),
               Text(
                 user.name,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
+              ).animate().fade(delay: 100.ms, duration: 300.ms),
               const SizedBox(height: 4),
               Text(
                 'Mahasiswa • NIM: ${user.nim ?? "-"}',
@@ -242,14 +259,18 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
-              ),
+              ).animate().fade(delay: 150.ms, duration: 300.ms),
               const SizedBox(height: 36),
 
-              Card(
-                color: AppTheme.getSurface(context),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppTheme.getBorderColor(context))),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  boxShadow: AppTheme.premiumShadow,
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -260,7 +281,10 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+                        decoration: const InputDecoration(
+                          labelText: 'Nama Lengkap',
+                          prefixIcon: Icon(Icons.person_outline, size: 20),
+                        ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Nama tidak boleh kosong'
                             : null,
@@ -268,7 +292,11 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nimController,
-                        decoration: const InputDecoration(labelText: 'NIM (Nomor Induk Mahasiswa)', hintText: 'Min. 7 digit angka'),
+                        decoration: const InputDecoration(
+                          labelText: 'NIM (Nomor Induk Mahasiswa)',
+                          hintText: 'Min. 7 digit angka',
+                          prefixIcon: Icon(Icons.badge_outlined, size: 20),
+                        ),
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) return 'NIM tidak boleh kosong';
@@ -280,33 +308,56 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(labelText: 'Email'),
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.mail_outline, size: 20),
+                        ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Email tidak boleh kosong'
                             : null,
                       ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                          backgroundColor: AppTheme.primary,
+                      const SizedBox(height: 24),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: AppTheme.primaryGradient,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: const Text('Simpan Perubahan'),
+                        child: ElevatedButton(
+                          onPressed: _saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 54),
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text('Simpan Perubahan'),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
+              ).animate().fade(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
               const SizedBox(height: 24),
-              Card(
-                color: Theme.of(context).cardTheme.color,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black12),
+              
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  boxShadow: AppTheme.premiumShadow,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -314,14 +365,25 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                       const SizedBox(height: 8),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                          color: AppTheme.primary,
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                            color: AppTheme.primary,
+                            size: 20,
+                          ),
                         ),
-                        title: const Text('Mode Gelap'),
+                        title: const Text('Mode Gelap', style: TextStyle(fontWeight: FontWeight.w500)),
                         trailing: Switch(
                           value: themeProvider.isDarkMode,
-                          activeThumbColor: AppTheme.accent,
+                          activeColor: AppTheme.accent,
+                          activeTrackColor: AppTheme.accent.withOpacity(0.3),
+                          inactiveThumbColor: Colors.grey,
+                          inactiveTrackColor: Colors.grey.withOpacity(0.2),
                           onChanged: (val) {
                             themeProvider.toggleTheme();
                           },
@@ -330,14 +392,18 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                     ],
                   ),
                 ),
-              ),
+              ).animate().fade(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
               const SizedBox(height: 24),
 
-              Card(
-                color: AppTheme.getSurface(context),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppTheme.getBorderColor(context))),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurface(context),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  boxShadow: AppTheme.premiumShadow,
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -350,7 +416,10 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                           ),
                           Switch(
                             value: user.isBiometricEnabled,
-                            activeThumbColor: AppTheme.accent,
+                            activeColor: AppTheme.accent,
+                            activeTrackColor: AppTheme.accent.withOpacity(0.3),
+                            inactiveThumbColor: Colors.grey,
+                            inactiveTrackColor: Colors.grey.withOpacity(0.2),
                             onChanged: (val) {
                               auth.toggleBiometricAuth(val);
                             },
@@ -369,13 +438,14 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Daftar Sidik Jari Terdaftar',
+                            'Daftar Sidik Jari',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           IconButton(
                             icon: const Icon(
                               Icons.add_circle_outline,
                               color: AppTheme.accent,
+                              size: 26,
                             ),
                             onPressed: _addFingerprintPrompt,
                           ),
@@ -401,11 +471,19 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                             final fingerprint = user.registeredFingerprints[index];
                             return ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: const Icon(
-                                Icons.fingerprint,
-                                color: AppTheme.accent,
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accent.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.fingerprint,
+                                  color: AppTheme.accent,
+                                  size: 20,
+                                ),
                               ),
-                              title: Text(fingerprint),
+                              title: Text(fingerprint, style: const TextStyle(fontWeight: FontWeight.w500)),
                               trailing: IconButton(
                                 icon: const Icon(
                                   Icons.delete_outline,
@@ -413,10 +491,11 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                                 ),
                                 onPressed: () {
                                   auth.removeFingerprint(fingerprint);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Sidik jari "$fingerprint" dihapus.'),
-                                    ),
+                                  HapticFeedback.lightImpact();
+                                  AppTheme.showPremiumSnackBar(
+                                    context,
+                                    'Sidik jari "$fingerprint" dihapus.',
+                                    SnackBarType.info,
                                   );
                                 },
                               ),
@@ -426,11 +505,13 @@ class _MahasiswaProfileScreenState extends State<MahasiswaProfileScreen> {
                     ],
                   ),
                 ),
-              ),
+              ).animate().fade(delay: 300.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

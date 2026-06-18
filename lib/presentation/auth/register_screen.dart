@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/models/user_model.dart';
 import '../../core/theme/app_theme.dart';
@@ -47,11 +49,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Pendaftaran berhasil! Selamat datang."),
-          backgroundColor: AppTheme.success,
-        ),
+      HapticFeedback.mediumImpact();
+      AppTheme.showPremiumSnackBar(
+        context,
+        "Pendaftaran berhasil! Selamat datang.",
+        SnackBarType.success,
       );
       Navigator.pushReplacement(
         context,
@@ -60,11 +62,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? "Pendaftaran gagal"),
-          backgroundColor: AppTheme.error,
-        ),
+      HapticFeedback.heavyImpact();
+      AppTheme.showPremiumSnackBar(
+        context,
+        authProvider.errorMessage ?? "Pendaftaran gagal",
+        SnackBarType.error,
       );
     }
   }
@@ -72,13 +74,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthProvider>().isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : AppTheme.getTextPrimary(context),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -86,19 +92,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         height: double.infinity,
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppTheme.background, Color(0xFF130F26)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.background : const Color(0xFFF8FAFC),
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
-                vertical: 20.0,
+                vertical: 16.0,
               ),
               child: Form(
                 key: _formKey,
@@ -108,174 +110,227 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Text(
                       'Daftar Mahasiswa',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.displayMedium
-                          ?.copyWith(
-                            color: Colors.white,
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
+                            foreground: Paint()
+                              ..shader = AppTheme.doubleGradient.createShader(
+                                const Rect.fromLTWH(0.0, 0.0, 300.0, 70.0),
+                              ),
                           ),
-                    ),
-                    const SizedBox(height: 8),
+                    ).animate().scale(duration: 350.ms, curve: Curves.easeOut),
+                    const SizedBox(height: 6),
                     Text(
-                      'Buat akun mahasiswa Anda untuk memulai pembelajaran',
+                      'Buat akun mahasiswa Anda untuk memulai kuis interaktif',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Lengkap',
-                        prefixIcon: Icon(
-                          Icons.person_outline,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Nama tidak boleh kosong';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _nimController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'NIM (Min. 7 Digit Angka)',
-                        prefixIcon: Icon(
-                          Icons.badge_outlined,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'NIM tidak boleh kosong';
-                        }
-                        if (!RegExp(r'^\d+$').hasMatch(value)) {
-                          return 'NIM harus berupa angka';
-                        }
-                        if (value.trim().length < 7) {
-                          return 'NIM minimal 7 digit';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email Kampus',
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Email tidak boleh kosong';
-                        }
-                        if (!value.contains('@')) return 'Email tidak valid';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(
-                          Icons.lock_outlined,
-                          color: AppTheme.textSecondary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.getTextSecondary(context),
+                            fontWeight: FontWeight.w500,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password tidak boleh kosong';
-                        }
-                        if (value.length < 6) {
-                          return 'Password minimal 6 karakter';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      decoration: InputDecoration(
-                        labelText: 'Konfirmasi Password',
-                        prefixIcon: const Icon(
-                          Icons.lock_clock_outlined,
-                          color: AppTheme.textSecondary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: AppTheme.textSecondary,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscureConfirmPassword =
-                                  !_obscureConfirmPassword;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Konfirmasi password tidak boleh kosong';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Password tidak cocok';
-                        }
-                        return null;
-                      },
-                    ),
+                    ).animate().fade(delay: 100.ms, duration: 300.ms),
                     const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: isLoading ? null : _handleRegister,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                    
+                    // Main Form Card
+                    Card(
+                      color: AppTheme.getSurface(context),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        side: BorderSide(
+                          color: AppTheme.getBorderColor(context),
+                          width: 1,
+                        ),
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
+                      shadowColor: Colors.black.withOpacity(0.05),
+                      elevation: isDark ? 0 : 8,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nama Lengkap',
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  color: AppTheme.primary,
+                                ),
                               ),
-                            )
-                          : const Text('Daftar Akun'),
-                    ),
-                    const SizedBox(height: 24),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Nama tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nimController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'NIM (Min. 7 Digit Angka)',
+                                prefixIcon: Icon(
+                                  Icons.badge_outlined,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'NIM tidak boleh kosong';
+                                }
+                                if (!RegExp(r'^\d+$').hasMatch(value)) {
+                                  return 'NIM harus berupa angka';
+                                }
+                                if (value.trim().length < 7) {
+                                  return 'NIM minimal 7 digit';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Email Kampus',
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Email tidak boleh kosong';
+                                }
+                                if (!value.contains('@')) return 'Email tidak valid';
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                prefixIcon: const Icon(
+                                  Icons.lock_outlined,
+                                  color: AppTheme.primary,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: AppTheme.getTextSecondary(context),
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password tidak boleh kosong';
+                                }
+                                if (value.length < 6) {
+                                  return 'Password minimal 6 karakter';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              decoration: InputDecoration(
+                                labelText: 'Konfirmasi Password',
+                                prefixIcon: const Icon(
+                                  Icons.lock_clock_outlined,
+                                  color: AppTheme.primary,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: AppTheme.getTextSecondary(context),
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword;
+                                    });
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Konfirmasi password tidak boleh kosong';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Password tidak cocok';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.doubleGradient,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withOpacity(0.25),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  )
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _handleRegister,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Daftar Sekarang',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).animate().fade(delay: 150.ms, duration: 350.ms).slideY(begin: 0.1, end: 0),
+                    
+                    const SizedBox(height: 28),
+                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'Sudah punya akun? ',
-                          style: TextStyle(color: AppTheme.textSecondary),
+                          style: TextStyle(
+                            color: AppTheme.getTextSecondary(context),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
@@ -284,11 +339,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: TextStyle(
                               color: AppTheme.primary,
                               fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),
                       ],
-                    ),
+                    ).animate().fade(delay: 200.ms, duration: 300.ms),
                   ],
                 ),
               ),

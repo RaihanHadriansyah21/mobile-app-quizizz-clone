@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers/auth_provider.dart';
@@ -41,11 +42,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final exists = auth.emailExists(_emailController.text.trim());
 
     if (!exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email tidak terdaftar. Periksa kembali.'),
-          backgroundColor: AppTheme.error,
-        ),
+      HapticFeedback.heavyImpact();
+      AppTheme.showPremiumSnackBar(
+        context,
+        'Email tidak terdaftar. Periksa kembali.',
+        SnackBarType.error,
       );
       return;
     }
@@ -66,13 +67,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!mounted) return;
 
     if (success) {
+      HapticFeedback.mediumImpact();
       setState(() => _step = _ResetStep.done);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.errorMessage ?? 'Gagal mengatur ulang password.'),
-          backgroundColor: AppTheme.error,
-        ),
+      HapticFeedback.heavyImpact();
+      AppTheme.showPremiumSnackBar(
+        context,
+        auth.errorMessage ?? 'Gagal mengatur ulang password.',
+        SnackBarType.error,
       );
     }
   }
