@@ -7,20 +7,20 @@ Dokumen ini disusun sebagai materi pembelajaran mandiri dan panduan presentasi t
 ## DAFTAR ISI
 1. [BAB 1: Gambaran Umum Aplikasi](#bab-1-gambaran-umum-aplikasi)
 2. [BAB 2: Fitur Utama](#bab-2-fitur-utama)
-3. [BAB 3: Alur Dosen (Detil Langkah-Demi-Langkah)](#bab-3-alur-dosen-paling-detail)
+3. [BAB 3: Alur Dosen (Paling Detail)](#bab-3-alur-dosen-paling-detail)
 4. [BAB 4: Alur Mahasiswa](#bab-4-alur-mahasiswa)
 5. [BAB 5: Database Supabase](#bab-5-database-supabase)
 6. [BAB 6: Supabase Storage](#bab-6-supabase-storage)
-7. [BAB 7: Mekanisme Realtime Sync](#bab-7-realtime)
-8. [BAB 8: State Management Provider & Arsitektur](#bab-8-provider-dan-arsitektur)
-9. [BAB 9: Struktur Kode Sumber (Folder Structure)](#bab-9-flow-source-code)
-10. [BAB 10: File Penting dan Fungsinya](#bab-10-file-penting)
-11. [BAB 11: Alur Logika Pengerjaan Kuis (Gameplay State Machine)](#bab-11-flow-pengerjaan-quiz)
-12. [BAB 12: Bug Penting yang Berhasil Diselesaikan](#bab-12-bug-yang-pernah-diseleksi)
-13. [BAB 13: Shorebird Code Push (OTA Update)](#bab-13-shorebird-ota-update)
-14. [BAB 14: 30 Pertanyaan Ujian & Jawaban Teknis](#bab-14-pertanyaan-dosen-yang-mungkin-muncul)
-15. [BAB 15: Naskah/Script Presentasi (Durasi 10-15 Menit)](#bab-15-script-presentasi)
-16. [BAB 16: Kesimpulan & Rencana Pengembangan Masa Depan](#bab-16-kesimpulan)
+7. [BAB 7: Realtime](#bab-7-realtime)
+8. [BAB 8: Provider dan Arsitektur](#bab-8-provider-dan-arsitektur)
+9. [BAB 9: Flow Source Code](#bab-9-flow-source-code)
+10. [BAB 10: File Penting](#bab-10-file-penting)
+11. [BAB 11: Flow Pengerjaan Quiz](#bab-11-flow-pengerjaan-quiz)
+12. [BAB 12: Bug yang Pernah Diselesaikan](#bab-12-bug-yang-pernah-diselesaikan)
+13. [BAB 13: Shorebird OTA Update](#bab-13-shorebird-ota-update)
+14. [BAB 14: Pertanyaan Dosen yang Mungkin Muncul](#bab-14-pertanyaan-dosen-yang-mungkin-muncul)
+15. [BAB 15: Script Presentasi](#bab-15-script-presentasi)
+16. [BAB 16: Kesimpulan](#bab-16-kesimpulan)
 
 ---
 
@@ -100,43 +100,43 @@ Login Dosen ➔ Dashboard Dosen ➔ Buat Bank Soal ➔ Buat Kuis ➔ Buat Kelas 
 
 ### Langkah 1: Login Dosen
 - Dosen masuk menggunakan email dan password terdaftar.
-- Pada callback login, sistem memverifikasi `role` pengguna di database. Apabila role adalah `dosen`, ia akan diarahkan ke `DosenMainNavigation`.
+- Pada callback login, sistem memverifikasi `role` pengguna di database. Apabila role adalah `dosen`, ia akan diarahkan ke [DosenMainNavigation](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/dosen_main_navigation.dart).
 
 ### Langkah 2: Dashboard Dosen
-- Dosen melihat statistik singkat mengenai jumlah kuis yang dibuat, kelas yang diampu, dan riwayat aktivitas kuis kelas.
+- Dosen melihat statistik singkat mengenai jumlah kuis yang dibuat, kelas yang diampu, dan riwayat aktivitas kuis kelas di [dosen_dashboard.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/dosen_dashboard.dart).
 - Terdapat tombol aksi cepat dan Speed Dial FAB untuk mempercepat navigasi.
 
 ### Langkah 3: Membuat Bank Soal
-- Dosen masuk ke menu Bank Soal. Ia dapat mengisi teks pertanyaan, poin (XP), tipe soal, dan kunci jawaban.
+- Dosen masuk ke menu Bank Soal di [question_bank_crud.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/question_bank_crud.dart). Ia dapat mengisi teks pertanyaan, poin (XP), tipe soal, dan kunci jawaban.
 - Dosen bisa melampirkan gambar, merekam/mengunggah audio soal (`.mp3`), dan melampirkan meme kustom.
-- File media ini diunggah via `FileService` ke Supabase Storage, yang mengembalikan URL publik untuk disimpan di baris data `QuestionModel`.
+- File media ini diunggah via [file_service.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/services/file_service.dart) ke Supabase Storage, yang mengembalikan URL publik untuk disimpan di baris data [QuestionModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/question_model.dart).
 
 ### Langkah 4: Membuat Kuis (Quiz)
-- Dosen menggabungkan kumpulan soal dari Bank Soal ke dalam suatu kontainer Kuis.
+- Dosen menggabungkan kumpulan soal dari Bank Soal ke dalam suatu kontainer Kuis di [quiz_assignment_crud.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/quiz_assignment_crud.dart).
 - Kuis diberi Judul, Deskripsi, Batas Percobaan Maksimal (*Max Attempts*), Tema Kuis, dan apakah Timer Soal aktif.
 
 ### Langkah 5: Membuat Kelas baru
-- Dosen masuk ke tab Kelas dan mengetik nama kelas baru (misal: "Pemrograman Mobile A").
+- Dosen masuk ke tab Kelas di [class_crud.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/class_crud.dart) dan mengetik nama kelas baru (misal: "Pemrograman Mobile A").
 - Sistem membuat objek kelas baru dengan kode unik acak sepanjang 6 karakter alfanumerik (misal: `CS901A`).
 
 ### Langkah 6: Generate QR Code Kelas
-- Pada detail kelas, dosen dapat membuka QR Code penjelas kelas.
+- Pada detail kelas di [class_crud.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/class_crud.dart), dosen dapat membuka QR Code penjelas kelas.
 - Sistem membungkus kode kelas (misal: `CS901A`) ke dalam kode matriks QR menggunakan package `qr_flutter`.
 
 ### Langkah 7: Assign Kuis ke Kelas
-- Dosen menavigasi ke menu "Tugaskan Kuis", memilih kuis yang telah dibuat, lalu mengeklik tombol "Tugaskan" di samping nama kelas target.
-- ID Kuis secara otomatis didorong ke array `quizIds` milik objek `ClassModel` tersebut di database Supabase.
+- Dosen menavigasi ke menu "Tugaskan Kuis" di [quiz_assignment_crud.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/quiz_assignment_crud.dart), memilih kuis yang telah dibuat, lalu mengeklik tombol "Tugaskan" di samping nama kelas target.
+- ID Kuis secara otomatis didorong ke array `quizIds` milik objek [ClassModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/class_model.dart) tersebut di database Supabase.
 
 ### Langkah 8: Mahasiswa Mengerjakan Kuis
 - Mahasiswa di kelas tersebut menerima pemberitahuan realtime kuis baru dan mulai mengerjakannya.
-- Setiap mahasiswa mengirimkan satu objek `AttemptModel` setelah kuis selesai.
+- Setiap mahasiswa mengirimkan satu objek [AttemptModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/attempt_model.dart) setelah kuis selesai.
 
 ### Langkah 9: Tinjau Leaderboard
 - Dosen dapat memantau urutan peringkat pengerjaan mahasiswa secara langsung.
 - Papan peringkat memilah skor terbaik berdasarkan akurasi jawaban benar dan efisiensi waktu pengerjaan.
 
 ### Langkah 10: Analitik Kelas
-- Dosen membuka tab "Analitik" untuk kuis bersangkutan.
+- Dosen membuka tab "Analitik" di [dosen_analytics.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/dosen/dosen_analytics.dart) untuk kuis bersangkutan.
 - Sistem memproses list `attempts` untuk memetakan:
   - Rerata nilai kelas, nilai tertinggi, dan nilai terendah.
   - Distribusi kelulusan mahasiswa dalam bentuk grafik rentang nilai.
@@ -156,18 +156,18 @@ Berikut adalah alur pengerjaan kuis dari sisi mahasiswa:
 Registrasi Akun ➔ Login Mahasiswa ➔ Scan QR Dosen (Join Kelas) ➔ Dashboard Kelas ➔ Pilih Kuis Aktif ➔ Gameplay (Jawab Soal + Booster) ➔ Feedback Meme Realtime ➔ Hasil Kuis (XP) ➔ Cek Leaderboard
 ```
 
-1. **Registrasi Akun**: Mahasiswa baru mendaftarkan diri lewat form registrasi (Nama, Email, Password, NIM). Akun dibuat dengan role default `mahasiswa`.
-2. **Login Mahasiswa**: Masuk ke aplikasi. Ia dapat mendaftarkan sidik jari di menu profil untuk kemudahan login berikutnya via Biometrik.
-3. **Join Kelas**: Mahasiswa masuk ke tab kelas, menekan tombol "Scan QR", lalu mengarahkan kamera ke layar handphone dosen. Kode kelas terbaca, dan ID mahasiswa ditambahkan ke array `studentIds` kelas tersebut di database.
-4. **Dashboard**: Mahasiswa melihat kelas-kelas yang diikuti dan kuis aktif yang ditugaskan oleh dosen.
+1. **Registrasi Akun**: Mahasiswa baru mendaftarkan diri lewat form registrasi di [register_screen.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/auth/register_screen.dart) (Nama, Email, Password, NIM). Akun dibuat dengan role default `mahasiswa`.
+2. **Login Mahasiswa**: Masuk ke aplikasi via [login_screen.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/auth/login_screen.dart). Ia dapat mendaftarkan sidik jari di menu profil untuk kemudahan login berikutnya via Biometrik.
+3. **Join Kelas**: Mahasiswa masuk ke tab kelas di [join_class.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/mahasiswa/join_class.dart), menekan tombol "Scan QR", lalu mengarahkan kamera ke layar handphone dosen. Kode kelas terbaca, dan ID mahasiswa ditambahkan ke array `studentIds` kelas tersebut di database.
+4. **Dashboard**: Mahasiswa melihat kelas-kelas yang diikuti dan kuis aktif yang ditugaskan oleh dosen di [mahasiswa_dashboard.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/mahasiswa/mahasiswa_dashboard.dart).
 5. **Gameplay (Mengerjakan Kuis)**:
-   - Mahasiswa memilih kuis dan menekan tombol "Mulai".
+   - Mahasiswa memilih kuis di dashboard dan masuk ke [gameplay_screen.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/mahasiswa/gameplay_screen.dart) untuk mulai menjawab.
    - Soal ditampilkan satu per satu dengan visual waktu berjalan (Timer Bar).
    - Apabila soal dilengkapi audio, ia dapat memutar klip suara (timer otomatis terjeda agar mahasiswa bisa menyimak dengan saksama).
    - Selama kuis berlangsung, mahasiswa dapat memakai *Power-Up* seperti "50:50" (menghilangkan setengah opsi salah), "Double Score" (melipatgandakan poin soal ini), atau "Freeze Timer" (menghentikan waktu berjalan).
 6. **Meme Feedback**: Setelah menjawab opsi soal, dialog visual muncul menampilkan meme kustom dosen untuk memberikan penguatan psikologis (reinforcement) secara instan.
-7. **Result Screen**: Menampilkan kalkulasi XP akhir yang didapat, akurasi pengerjaan, dan tombol untuk menyimpan hasil kuis ke database.
-8. **Leaderboard**: Mahasiswa dapat membandingkan posisinya di podium klasemen kuis kelas.
+7. **Result Screen**: Menampilkan kalkulasi XP akhir yang didapat di [result_screen.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/mahasiswa/result_screen.dart), akurasi pengerjaan, dan tombol untuk menyimpan hasil kuis ke database.
+8. **Leaderboard**: Mahasiswa dapat membandingkan posisinya di podium klasemen kuis kelas di [mahasiswa_leaderboard.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/mahasiswa/mahasiswa_leaderboard.dart).
 
 ---
 
@@ -184,7 +184,7 @@ erDiagram
     quizzes }o--o{ questions : "contains questions"
 ```
 
-### 1. Tabel `users`
+### 1. Tabel `users` (Model: [UserModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/user_model.dart))
 - **Fungsi**: Menyimpan data kredensial autentikasi dan setelan pengguna.
 - **Primary Key**: `id` (VARCHAR)
 - **Field Penting**:
@@ -197,7 +197,7 @@ erDiagram
   - `isBiometricEnabled` (BOOLEAN): Status keaktifan login sidik jari.
   - `registeredFingerprints` (TEXT[]): List nama sidik jari terdaftar.
 
-### 2. Tabel `classes`
+### 2. Tabel `classes` (Model: [ClassModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/class_model.dart))
 - **Fungsi**: Mengelompokkan mahasiswa ke dalam kelas yang diajar dosen.
 - **Primary Key**: `id` (TEXT)
 - **Field Penting**:
@@ -207,7 +207,7 @@ erDiagram
   - `studentIds` (TEXT[] / JSONB): Daftar ID mahasiswa terdaftar.
   - `quizIds` (TEXT[] / JSONB): Daftar ID kuis yang ditugaskan ke kelas ini.
 
-### 3. Tabel `questions`
+### 3. Tabel `questions` (Model: [QuestionModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/question_model.dart))
 - **Fungsi**: Menyimpan data bank soal individual.
 - **Primary Key**: `id` (TEXT)
 - **Field Penting**:
@@ -219,7 +219,7 @@ erDiagram
   - `timeLimitSeconds` (INTEGER): Batas waktu menjawab soal (detik).
   - `imageUrl` / `audioUrl` / `memeUrl` (TEXT, Nullable): Link media eksternal dari storage bucket.
 
-### 4. Tabel `quizzes`
+### 4. Tabel `quizzes` (Model: [QuizModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/quiz_model.dart))
 - **Fungsi**: Wadah kuis yang mengikat daftar soal.
 - **Primary Key**: `id` (TEXT)
 - **Field Penting**:
@@ -230,7 +230,7 @@ erDiagram
   - `maxAttempts` (INTEGER): Jumlah pengerjaan maksimal oleh mahasiswa.
   - `isTimerEnabled` (BOOLEAN): Status keaktifan pembatasan waktu kuis.
 
-### 5. Tabel `attempts`
+### 5. Tabel `attempts` (Model: [AttemptModel](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/models/attempt_model.dart))
 - **Fungsi**: Rekam jejak hasil pengerjaan kuis oleh mahasiswa.
 - **Primary Key**: `id` (TEXT)
 - **Field Penting**:
@@ -277,7 +277,7 @@ Supabase Storage digunakan untuk menyimpan aset media besar yang diunggah oleh D
 
 ---
 
-## BAB 7: REALTIME SYNC MECHANISM
+## BAB 7: REALTIME
 
 Aplikasi Quizizz Clone mendukung pembaruan data secara instan tanpa perlu memuat ulang halaman (*pull-to-refresh*) secara manual oleh mahasiswa. Ini dicapai menggunakan fitur **PostgreSQL CDC (Change Data Capture)** Supabase Realtime.
 
@@ -303,7 +303,7 @@ Aplikasi Quizizz Clone mendukung pembaruan data secara instan tanpa perlu memuat
 
 ---
 
-## BAB 8: STATE MANAGEMENT PROVIDER & ARSITEKTUR
+## BAB 8: PROVIDER DAN ARSITEKTUR
 
 Aplikasi ini membagi logika bisnis dan UI menggunakan arsitektur **MVVM (Model-View-ViewModel)** dengan package `provider` sebagai jembatan State Management.
 
@@ -326,24 +326,24 @@ Aplikasi ini membagi logika bisnis dan UI menggunakan arsitektur **MVVM (Model-V
 └────────────────────────────────────────┘
 ```
 
-### 1. `AuthProvider`
+### 1. [AuthProvider](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/providers/auth_provider.dart)
 - **Fungsi**: Mengelola sesi masuk pengguna, registrasi, pendaftaran sidik jari biometrik, pembaharuan data profil, dan setelan tema pengguna.
 
-### 2. `DosenProvider`
+### 2. [DosenProvider](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/providers/dosen_provider.dart)
 - **Fungsi**: Memanajemen kelas (tambah/hapus kelas), menyusun kuis, membuat bank soal, mengintegrasikan Google Classroom, mengolah analitik kuis, dan menugaskan kuis ke kelas-kelas.
 
-### 3. `MahasiswaProvider`
+### 3. [MahasiswaProvider](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/providers/mahasiswa_provider.dart)
 - **Fungsi**: Menangani logika mahasiswa saat bergabung ke kelas baru via QR Code, memuat daftar kuis kelas yang aktif, serta melacak riwayat pengerjaan kuis pribadi.
 
-### 4. `GameplayProvider`
+### 4. [GameplayProvider](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/providers/gameplay_provider.dart)
 - **Fungsi**: State machine utama yang memandu jalannya kuis mahasiswa. Mengelola indeks soal aktif, waktu tersisa (timer), poin skor terkumpul, inventory item power-up booster, feedback jawaban benar/salah, dan pengiriman attempt akhir.
 
-### 5. `AdminProvider`
+### 5. [AdminProvider](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/providers/admin_provider.dart)
 - **Fungsi**: Mengelola pembuatan akun dosen/mahasiswa oleh administrator, memonitor aktivitas pengerjaan kuis kelas global, dan menampilkan rekapitulasi data sistem.
 
 ---
 
-## BAB 9: FLOW SOURCE CODE (FOLDER STRUCTURE)
+## BAB 9: FLOW SOURCE CODE
 
 Berikut adalah struktur pengarsipan direktori source code Flutter Quizizz Clone:
 
@@ -372,27 +372,31 @@ lib/
     └── mahasiswa/                 # Dashboard mahasiswa, join class, gameplay, leaderboard, profile
 ```
 
+*Catatan file entri utama:*
+* [main.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/main.dart) adalah berkas inisialisasi utama aplikasi Flutter dan konfigurasi Supabase client.
+* [app_theme.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/core/theme/app_theme.dart) menyimpan konfigurasi sistem tema visual (Slate Dark & Indigo Light) global.
+
 ---
 
 ## BAB 10: FILE PENTING
 
 Berikut adalah penjelasan empat file paling krusial di dalam arsitektur aplikasi ini:
 
-### 1. `db_service.dart`
+### 1. [db_service.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/services/db_service.dart)
 - **Fungsi**: Pusat manipulasi data Supabase dan cache lokal. Berisi fungsi-fungsi `saveUser`, `getQuizzes`, `saveClass`, `saveQuestion`, dan `realtimeChangeStream`. Menjamin aplikasi tetap berjalan stabil meskipun koneksi Supabase terganggu secara berkala dengan strategi caching lokal.
 
-### 2. `auth_service.dart`
+### 2. [auth_service.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/services/auth_service.dart)
 - **Fungsi**: Mengurus otentikasi login/register pengguna ke Supabase Auth. Berisi logika pengecekan ketersediaan biometrik perangkat bawaan (`isBiometricsAvailable`), pemicuan dialog sidik jari OS (`authenticateWithBiometrics`), dan reset password.
 
-### 3. `file_service.dart`
+### 3. [file_service.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/services/file_service.dart)
 - **Fungsi**: Kelas utilitas IO. Menangani upload file media (gambar, audio, avatar) ke storage Supabase. Selain itu, berisi logika penyusunan data tabular untuk **PDF Export** (menggunakan canvas biner pdf) dan **CSV Export** (string builder format comma-separated).
 
-### 4. `gameplay_provider.dart`
+### 4. [gameplay_provider.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/data/providers/gameplay_provider.dart)
 - **Fungsi**: Mengontrol mesin permainan kuis. Menyimpan detail status permainan aktif mahasiswa, sisa waktu soal, status pemakaian item power-up booster, dan menghitung total XP yang didapat mahasiswa saat jawaban diserahkan.
 
 ---
 
-## BAB 11: FLOW PENGERJAAN QUIZ (GAMEPLAY ENGINE)
+## BAB 11: FLOW PENGERJAAN QUIZ
 
 Berikut adalah urutan logika program saat mahasiswa menekan tombol "Mulai Kuis" hingga pengiriman skor:
 
@@ -414,7 +418,7 @@ startQuiz() ➔ Ambil currentQuestion ➔ Jalankan Timer & Render Opsi ➔ Pemak
 
 ---
 
-## BAB 12: BUG PENTING YANG BERHASIL DISELESAIKAN
+## BAB 12: BUG YANG PERNAH DISELESAIKAN
 
 Dalam proses development, tim berhasil mengidentifikasi dan menambal empat bug kritis berikut:
 
@@ -424,7 +428,7 @@ Dalam proses development, tim berhasil mengidentifikasi dan menambal empat bug k
 
 ### 2. Max Attempt Bypass Bug
 - **Masalah**: Mahasiswa nakal dapat mengulangi pengerjaan kuis berkali-kali melebihi limit `maxAttempts` yang ditetapkan dosen dengan cara menekan tombol "Kembali" handphone saat kuis berlangsung lalu masuk kembali.
-- **Solusi**: Memperketat pengecekan di level inisiasi kuis. Di `mahasiswa_dashboard.dart` sebelum kuis dimuat, sistem menghitung jumlah attempt mahasiswa terkait yang sudah tersimpan di database. Jika `attemptsCount >= maxAttempts`, tombol "Mulai" otomatis disembunyikan dan diganti dengan status indikator "Batas Percobaan Habis".
+- **Solusi**: Memperketat pengecekan di level inisiasi kuis. Di [mahasiswa_dashboard.dart](file:///d:/Tubes%20Mobapp%20Mayang/mobile-app-quizizz-clone-main/lib/presentation/mahasiswa/mahasiswa_dashboard.dart) sebelum kuis dimuat, sistem menghitung jumlah attempt mahasiswa terkait yang sudah tersimpan di database. Jika `attemptsCount >= maxAttempts`, tombol "Mulai" otomatis disembunyikan dan diganti dengan status indikator "Batas Percobaan Habis".
 
 ### 3. Audio Timer Desync Bug
 - **Masalah**: Pada soal listening, mahasiswa memutar file audio soal berdurasi 40 detik, tetapi timer soal terus berjalan mundur dan habis di detik ke-30 sebelum audio selesai diputar.
@@ -436,7 +440,7 @@ Dalam proses development, tim berhasil mengidentifikasi dan menambal empat bug k
 
 ---
 
-## BAB 13: SHOREBIRD CODE PUSH (OTA UPDATE)
+## BAB 13: SHOREBIRD OTA UPDATE
 
 Shorebird digunakan sebagai infrastruktur **Over-The-Air (OTA) Update** tanpa perlu melakukan instalasi ulang APK.
 
@@ -465,7 +469,7 @@ Shorebird digunakan sebagai infrastruktur **Over-The-Air (OTA) Update** tanpa pe
 
 ---
 
-## BAB 14: PERTANYAAN DOSEN YANG MUNGKIN MUNCUL (30 Q&A)
+## BAB 14: PERTANYAAN DOSEN YANG MUNGKIN MUNCUL
 
 Berikut adalah daftar 30 pertanyaan kritis yang sering diajukan dosen penguji beserta jawaban taktis dan teknisnya:
 
@@ -561,7 +565,7 @@ Berikut adalah daftar 30 pertanyaan kritis yang sering diajukan dosen penguji be
 
 ---
 
-## BAB 15: SCRIPT PRESENTASI (DURASI 10-15 MENIT)
+## BAB 15: SCRIPT PRESENTASI
 
 Berikut adalah naskah presentasi siap pakai yang terstruktur rapi untuk memandu demonstrasi aplikasi di depan dosen penguji.
 
@@ -585,7 +589,7 @@ Berikut adalah naskah presentasi siap pakai yang terstruktur rapi untuk memandu 
 
 ---
 
-## BAB 16: KESIMPULAN & PENGEMBANGAN MASA DEPAN
+## BAB 16: KESIMPULAN
 
 ### Kelebihan Utama Aplikasi:
 1. **Premium Aesthetic & UX**: Layout rapi dengan visual modern, shadow halus, shimmer loader, transisi halaman mengalir, serta feedback visual meme yang menyenangkan.

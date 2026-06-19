@@ -122,27 +122,32 @@ class DosenDashboardScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Selamat Datang,',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.getTextSecondary(context),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Selamat Datang,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.getTextSecondary(context),
+                            ),
                           ),
-                        ),
-                        Text(
-                          user.name,
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.getTextPrimary(context),
+                          Text(
+                            user.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.getTextPrimary(context),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     CircleAvatar(
                       radius: 26,
                       backgroundColor: AppTheme.secondary.withOpacity(0.12),

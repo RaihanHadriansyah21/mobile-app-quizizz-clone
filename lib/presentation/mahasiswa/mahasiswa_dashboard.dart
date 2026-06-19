@@ -161,27 +161,32 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Selamat Datang,',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.getTextSecondary(context),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Selamat Datang,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.getTextSecondary(context),
+                            ),
                           ),
-                        ),
-                        Text(
-                          student.name,
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.getTextPrimary(context),
+                          Text(
+                            student.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.getTextPrimary(context),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppTheme.primary.withOpacity(0.12),
@@ -301,27 +306,32 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Selamat Datang,',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.getTextSecondary(context),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Selamat Datang,',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.getTextSecondary(context),
+                            ),
                           ),
-                        ),
-                        Text(
-                          student.name,
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.getTextPrimary(context),
+                          Text(
+                            student.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.getTextPrimary(context),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     Hero(
                       tag: 'student_avatar',
                       child: CircleAvatar(
