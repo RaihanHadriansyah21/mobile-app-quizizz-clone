@@ -148,13 +148,18 @@ class DosenDashboardScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    CircleAvatar(
+                     CircleAvatar(
                       radius: 26,
                       backgroundColor: AppTheme.secondary.withOpacity(0.12),
-                      child: Text(
-                        user.name.isNotEmpty ? user.name[0].toUpperCase() : 'D',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondary, fontSize: 16),
-                      ),
+                      backgroundImage: user.photoPath != null && user.photoPath!.startsWith('http')
+                          ? NetworkImage(user.photoPath!) as ImageProvider
+                          : null,
+                      child: user.photoPath == null || !user.photoPath!.startsWith('http')
+                          ? Text(
+                              user.name.isNotEmpty ? user.name[0].toUpperCase() : 'D',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondary, fontSize: 16),
+                            )
+                          : null,
                     ),
                   ],
                 ).animate().fade(duration: 300.ms),

@@ -406,16 +406,34 @@ class FileService {
 
   // Upload an image to the 'images' bucket
   static Future<String?> uploadImage(String localPath) async {
+    final ext = localPath.split('.').last.toLowerCase();
+    const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!allowed.contains(ext)) {
+      debugPrint("uploadImage rejected: invalid extension .$ext");
+      return null;
+    }
     return uploadToSupabase(localPath, 'images');
   }
 
   // Upload an audio clip to the 'audio' bucket
   static Future<String?> uploadAudio(String localPath) async {
+    final ext = localPath.split('.').last.toLowerCase();
+    const allowed = ['mp3', 'wav', 'm4a', 'aac', 'ogg'];
+    if (!allowed.contains(ext)) {
+      debugPrint("uploadAudio rejected: invalid extension .$ext");
+      return null;
+    }
     return uploadToSupabase(localPath, 'audio');
   }
 
   // Upload a meme to the 'images' bucket
   static Future<String?> uploadMeme(String localPath) async {
+    final ext = localPath.split('.').last.toLowerCase();
+    const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!allowed.contains(ext)) {
+      debugPrint("uploadMeme rejected: invalid extension .$ext");
+      return null;
+    }
     return uploadToSupabase(localPath, 'images');
   }
 }

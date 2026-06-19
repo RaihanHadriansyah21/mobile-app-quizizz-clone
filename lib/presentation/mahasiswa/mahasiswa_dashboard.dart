@@ -190,10 +190,15 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppTheme.primary.withOpacity(0.12),
-                      child: Text(
-                        student.name.isNotEmpty ? student.name[0].toUpperCase() : 'M',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary),
-                      ),
+                      backgroundImage: student.photoPath != null && student.photoPath!.startsWith('http')
+                          ? NetworkImage(student.photoPath!) as ImageProvider
+                          : null,
+                      child: student.photoPath == null || !student.photoPath!.startsWith('http')
+                          ? Text(
+                              student.name.isNotEmpty ? student.name[0].toUpperCase() : 'M',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primary),
+                            )
+                          : null,
                     ),
                   ],
                 ),
@@ -333,14 +338,19 @@ class _MahasiswaDashboardScreenState extends State<MahasiswaDashboardScreen> {
                     ),
                     const SizedBox(width: 12),
                     Hero(
-                      tag: 'student_avatar',
+                      tag: 'student_avatar_dashboard',
                       child: CircleAvatar(
                         radius: 26,
                         backgroundColor: AppTheme.secondary.withOpacity(0.12),
-                        child: Text(
-                          student.name.isNotEmpty ? student.name[0].toUpperCase() : 'M',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondary, fontSize: 16),
-                        ),
+                        backgroundImage: student.photoPath != null && student.photoPath!.startsWith('http')
+                            ? NetworkImage(student.photoPath!) as ImageProvider
+                            : null,
+                        child: student.photoPath == null || !student.photoPath!.startsWith('http')
+                            ? Text(
+                                student.name.isNotEmpty ? student.name[0].toUpperCase() : 'M',
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondary, fontSize: 16),
+                              )
+                            : null,
                       ),
                     ),
                   ],

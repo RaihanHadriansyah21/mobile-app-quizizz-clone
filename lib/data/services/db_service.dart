@@ -192,6 +192,9 @@ class DbService {
         return ru.copyWith(password: pass);
       }).toList();
 
+      // Persist the synced user profiles (with merged passwords) to local SharedPreferences
+      await _saveList('users', _usersCached!.map((u) => u.toJson()).toList());
+
       // 2. Fetch remote classes
       final List<dynamic> remoteClassesRaw = await client.from('classes').select();
       _classesCached = remoteClassesRaw
@@ -241,6 +244,9 @@ class DbService {
       _usersCached!.removeWhere((u) => u.id == user.id);
       _usersCached!.add(user);
 
+      // Persist user locally (including password/changes) to SharedPreferences
+      await _saveList('users', _usersCached!.map((u) => u.toJson()).toList());
+
       final userJson = _cleanRecordForSupabase('users', user.toJson());
       try {
         await Supabase.instance.client
@@ -262,6 +268,9 @@ class DbService {
     if (isSupabaseEnabled) {
       _usersCached ??= getUsers();
       _usersCached!.removeWhere((u) => u.id == userId);
+
+      // Persist user deletion locally to SharedPreferences
+      await _saveList('users', _usersCached!.map((u) => u.toJson()).toList());
 
       try {
         await Supabase.instance.client

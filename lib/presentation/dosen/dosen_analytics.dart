@@ -6,6 +6,7 @@ import '../../data/models/quiz_model.dart';
 import '../../data/models/attempt_model.dart';
 import '../../data/providers/dosen_provider.dart';
 import '../../data/services/file_service.dart';
+import '../../data/services/db_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/loading_skeleton.dart';
@@ -584,6 +585,7 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                       itemCount: filteredRankedStudents.length,
                       itemBuilder: (context, index) {
                         final attempt = filteredRankedStudents[index];
+                        final studentUser = DbService.getUserById(attempt.studentId);
                         final rank = index + 1;
                         Color medalColor = Colors.grey;
                         if (rank == 1) medalColor = AppTheme.warning;
@@ -616,7 +618,31 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                                 ),
                               ),
                             ),
-                            title: Text(attempt.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            title: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: AppTheme.getSurfaceLight(context),
+                                  backgroundImage: studentUser?.photoPath != null && studentUser!.photoPath!.startsWith('http')
+                                      ? NetworkImage(studentUser.photoPath!) as ImageProvider
+                                      : null,
+                                  child: studentUser?.photoPath == null || !studentUser!.photoPath!.startsWith('http')
+                                      ? Text(
+                                          attempt.studentName.isNotEmpty ? attempt.studentName[0].toUpperCase() : '?',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.getTextPrimary(context),
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(attempt.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
                             subtitle: Text('Durasi: ${attempt.timeTaken}s • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}', style: const TextStyle(fontSize: 12)),
                             trailing: Text(
                               '${attempt.score} XP',
@@ -719,6 +745,7 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                       itemCount: filteredAttempts.length,
                       itemBuilder: (context, index) {
                         final attempt = filteredAttempts[index];
+                        final studentUser = DbService.getUserById(attempt.studentId);
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
@@ -740,9 +767,33 @@ class _DosenAnalyticsScreenState extends State<DosenAnalyticsScreen> {
                                   ),
                                 ),
                               ),
-                              title: Text(
-                                attempt.studentName,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              title: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: AppTheme.getSurfaceLight(context),
+                                    backgroundImage: studentUser?.photoPath != null && studentUser!.photoPath!.startsWith('http')
+                                        ? NetworkImage(studentUser.photoPath!) as ImageProvider
+                                        : null,
+                                    child: studentUser?.photoPath == null || !studentUser!.photoPath!.startsWith('http')
+                                        ? Text(
+                                            attempt.studentName.isNotEmpty ? attempt.studentName[0].toUpperCase() : '?',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.getTextPrimary(context),
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      attempt.studentName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
                               subtitle: Text(
                                 'Skor: ${attempt.score} • Benar: ${attempt.correctAnswersCount}/${attempt.totalQuestions}',

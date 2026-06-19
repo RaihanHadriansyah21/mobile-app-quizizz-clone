@@ -186,7 +186,15 @@ class AuthProvider extends ChangeNotifier {
               'avatars',
             );
           }
+        } else {
+          // If upload failed, revert to the old network photo path (if any) or set to null
+          finalPhotoPath = (_currentUser!.photoPath != null && _currentUser!.photoPath!.startsWith('http'))
+              ? _currentUser!.photoPath
+              : null;
         }
+      } else {
+        // Enforce network-only profile photos: do not save local paths
+        finalPhotoPath = null;
       }
     } else if (photoPath == null &&
         _currentUser!.photoPath != null &&

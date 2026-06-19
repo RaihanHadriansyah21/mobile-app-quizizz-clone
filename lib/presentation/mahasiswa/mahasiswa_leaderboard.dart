@@ -141,6 +141,7 @@ class _MahasiswaLeaderboardScreenState
     required Color color,
     required String emoji,
   }) {
+    final studentUser = DbService.getUserById(entry.studentId);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -160,14 +161,19 @@ class _MahasiswaLeaderboardScreenState
           child: CircleAvatar(
             radius: rank == 1 ? 30 : 25,
             backgroundColor: AppTheme.getSurfaceLight(context),
-            child: Text(
-              entry.name.substring(0, min(2, entry.name.length)).toUpperCase(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.getTextPrimary(context),
-                fontSize: rank == 1 ? 16 : 13,
-              ),
-            ),
+            backgroundImage: studentUser?.photoPath != null && studentUser!.photoPath!.startsWith('http')
+                ? NetworkImage(studentUser.photoPath!) as ImageProvider
+                : null,
+            child: studentUser?.photoPath == null || !studentUser!.photoPath!.startsWith('http')
+                ? Text(
+                    entry.name.substring(0, min(2, entry.name.length)).toUpperCase(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.getTextPrimary(context),
+                      fontSize: rank == 1 ? 16 : 13,
+                    ),
+                  )
+                : null,
           ),
         ),
         const SizedBox(height: 8),
@@ -298,6 +304,7 @@ class _MahasiswaLeaderboardScreenState
         for (var attempt in quizzesMap.values) {
           if (scoresMap.containsKey(studentId)) {
             scoresMap[studentId] = _LeaderboardEntry(
+              studentId: studentId,
               name: attempt.studentName,
               score: scoresMap[studentId]!.score + attempt.score,
               quizzesPlayed: scoresMap[studentId]!.quizzesPlayed + 1,
@@ -305,6 +312,7 @@ class _MahasiswaLeaderboardScreenState
             );
           } else {
             scoresMap[studentId] = _LeaderboardEntry(
+              studentId: studentId,
               name: attempt.studentName,
               score: attempt.score,
               quizzesPlayed: 1,
@@ -496,6 +504,7 @@ class _MahasiswaLeaderboardScreenState
                   itemBuilder: (context, index) {
                     final entry = remainingEntries[index];
                     final rank = index + 4;
+                    final studentUser = DbService.getUserById(entry.studentId);
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -523,9 +532,33 @@ class _MahasiswaLeaderboardScreenState
                             ),
                           ),
                         ),
-                        title: Text(
-                          entry.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        title: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: AppTheme.getSurfaceLight(context),
+                              backgroundImage: studentUser?.photoPath != null && studentUser!.photoPath!.startsWith('http')
+                                  ? NetworkImage(studentUser.photoPath!) as ImageProvider
+                                  : null,
+                              child: studentUser?.photoPath == null || !studentUser!.photoPath!.startsWith('http')
+                                  ? Text(
+                                      entry.name.isNotEmpty ? entry.name[0].toUpperCase() : '?',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.getTextPrimary(context),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                entry.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
                         subtitle: Text('${entry.quizzesPlayed} Kuis Selesai', style: const TextStyle(fontSize: 12)),
                         trailing: Text(
@@ -678,12 +711,14 @@ class _MahasiswaLeaderboardScreenState
 }
 
 class _LeaderboardEntry {
+  final String studentId;
   final String name;
   final int score;
   final int quizzesPlayed;
   final int totalTimeSeconds;
 
   _LeaderboardEntry({
+    required this.studentId,
     required this.name,
     required this.score,
     required this.quizzesPlayed,

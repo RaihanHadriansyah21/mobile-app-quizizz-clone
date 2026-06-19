@@ -778,8 +778,22 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
   }
 
   Future<void> _pickAudio() async {
-    String? path = await FileService.pickFile(type: FileType.audio);
+    String? path = await FileService.pickFile(
+      type: FileType.custom,
+      allowedExtensions: const ['mp3', 'wav', 'm4a', 'aac', 'ogg'],
+    );
     if (path != null) {
+      final ext = path.split('.').last.toLowerCase();
+      const allowed = ['mp3', 'wav', 'm4a', 'aac', 'ogg'];
+      if (!allowed.contains(ext)) {
+        if (!mounted) return;
+        AppTheme.showPremiumSnackBar(
+          context,
+          'Hanya file audio saja yang diperbolehkan (${allowed.join(", ")})!',
+          SnackBarType.error,
+        );
+        return;
+      }
       setState(() {
         _localAudioPath = path;
       });
@@ -787,8 +801,22 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
   }
 
   Future<void> _pickImage() async {
-    String? path = await FileService.pickFile(type: FileType.image);
+    String? path = await FileService.pickFile(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    );
     if (path != null) {
+      final ext = path.split('.').last.toLowerCase();
+      const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      if (!allowed.contains(ext)) {
+        if (!mounted) return;
+        AppTheme.showPremiumSnackBar(
+          context,
+          'Hanya file gambar saja yang diperbolehkan (${allowed.join(", ")})!',
+          SnackBarType.error,
+        );
+        return;
+      }
       setState(() {
         _localImagePath = path;
       });
@@ -796,8 +824,22 @@ class _QuestionFormDialogState extends State<QuestionFormDialog> {
   }
 
   Future<void> _pickMeme() async {
-    String? path = await FileService.pickFile(type: FileType.image);
+    String? path = await FileService.pickFile(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    );
     if (path != null) {
+      final ext = path.split('.').last.toLowerCase();
+      const allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      if (!allowed.contains(ext)) {
+        if (!mounted) return;
+        AppTheme.showPremiumSnackBar(
+          context,
+          'Hanya file gambar saja yang diperbolehkan (${allowed.join(", ")})!',
+          SnackBarType.error,
+        );
+        return;
+      }
       setState(() {
         _localMemePath = path;
       });
